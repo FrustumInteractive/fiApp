@@ -1,0 +1,8 @@
+.DS_Store
+project.xcworkspace/
+xcuserdata/
+*.pbxuser
+*.xcuserstate
+*.xcscheme
+*.xcbkptlist
+*.xcscmblueprint
