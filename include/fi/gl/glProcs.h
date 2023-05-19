@@ -1,10 +1,10 @@
 #ifndef _GL2FUNCS_H
 #define _GL2FUNCS_H
 
-#include <fi/gl/glcorearb.h>
+#include "fi/gl/glcorearb.h"
 
 #ifdef LINUX
-	#include "fi/app/x11App.h"
+	#include <GL/glx.h>
 	#define getProcAddress(x) glXGetProcAddress((const GLubyte*)x)
 #elif defined(OSX) || defined(__ANDROID__)
 

@@ -1,4 +1,4 @@
-#include <gfx/gl/glProcs.h>
+#include "fi/gl/glProcs.h"
 
 #if defined(OSX) || defined(__ANDROID__)
 	#if defined(OSX)
