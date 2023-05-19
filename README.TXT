@@ -1,6 +1,6 @@
 fiApp
 
-A framework for setting up an simple application window for various operating systems.
+A framework for setting up an simple application window for various operating systems with virtually no dependencies.
 
 Features:
 - keyboard + mouse support
