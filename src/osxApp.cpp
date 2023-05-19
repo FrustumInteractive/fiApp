@@ -3,7 +3,7 @@
 #include <string>
 #include <unistd.h>
 
-#include "application/osxApp.h"
+#include "fi/app/osxApp.h"
 
 #include <mach-o/dyld.h>
 #include <unistd.h>
@@ -49,6 +49,10 @@ void OSXApp::createWindow(const char *title, int x, int y, int width, int height
 	cout << "content scale factor: " << m_scaleFactor << endl;
 	m_width = width*m_scaleFactor; // set render surface to be right backing size irrespective of 'DPI'
 	m_height = height*m_scaleFactor; // application->event coordinate normalization uses scale factor
+
+	// get display res
+	CWGetScreenSize(m_screenWidth, m_screenHeight);
+
 	gfxAPIInit();
 }
 
@@ -110,32 +114,38 @@ void OSXApp::mainloop()
 				break;
 
 			case MOUSEEVENT_MOVE:
-				if(bLeftBtnDown)
+				if (bLeftBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
 					e.setData((float)mx, (float)my);
-					setEvent(e);
 				}
-				if(bRightBtnDown)
+				else if (bRightBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
 					e.setData((float)mx, (float)my);
-					setEvent(e);
 				}
-
-				e.setType(FI::EVENT_MOUSE_MOVE);
-				e.setData((float)mx, (float)my);
+				else
+				{
+					e.setType(FI::EVENT_MOUSE_MOVE);
+					e.setData((float)mx, (float)my);
+				}
 				setEvent(e);
 				break;
-
 			default:
 				break;
 		}
-		
-		if(eKeyCode kc = CWInkey())
+
+		if (eKeyCode kc = CWInkey())
 		{
-			//onKeyPress(kc);
-			e.setType(FI::EVENT_KEY_PRESS);
+			if (CWGetKeyState(kc) == 1)
+			{
+				e.setType(FI::EVENT_KEY_PRESS);
+				
+			}
+			else
+			{
+				e.setType(FI::EVENT_KEY_RELEASE);
+			}
 			e.setData((unsigned int)kc, 0);
 			setEvent(e);
 		}
@@ -144,6 +154,11 @@ void OSXApp::mainloop()
 		CWSwapBuffers();
 		//CWSleep(17);
 	}
+}
+
+void OSXApp::warpMouseCursorPosition(unsigned x, unsigned y)
+{
+	CWWarpMouseCursorPosition(x, y);
 }
 
 void OSXApp::swapBuffers()

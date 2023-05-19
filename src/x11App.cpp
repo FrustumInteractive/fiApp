@@ -11,7 +11,7 @@
 #include <string.h>
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
-#include "application/x11App.h"
+#include "fi/app/x11App.h"
 #include "debug/trace.h"
 
 typedef struct {
@@ -186,14 +186,14 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		cwmask |= CWBorderPixel | CWOverrideRedirect;
 	}
 
-	m_window = XCreateWindow( 	
-					m_display, 
-					m_rootWindow, 
-					m_xpos, m_ypos, 
-					m_width, m_height, 
-					0, 
-					m_visualInfo->depth, 
-					InputOutput, 
+	m_window = XCreateWindow(
+					m_display,
+					m_rootWindow,
+					m_xpos, m_ypos,
+					m_width, m_height,
+					0,
+					m_visualInfo->depth,
+					InputOutput,
 					m_visualInfo->visual,
 					cwmask,
 					&m_setWindowAttributes );

@@ -6,8 +6,8 @@
 *		Copyright Frustum Interactive Inc. - All rights reserved.
 */
 
-#include "application/application.h"
-#include "application/fileIO.h"
+#include "fi/app/app.h"
+#include "fi/app/fileIO.h"
 
 Application::Application(const int argc, const char *argv[])
 	: m_width(1)
@@ -73,6 +73,7 @@ void Application::setEvent(FI::Event e)
 		case FI::EVENT_MOUSE_RIGHT_CLICK:
 		case FI::EVENT_MOUSE_RIGHT_DRAG:
 		case FI::EVENT_MOUSE_RIGHT_RELEASE:
+		case FI::EVENT_MOUSE_MOVE:
 		{
 			// normalize to opengl coords
 			float x = e.data_float()[0] / m_width * m_scaleFactor;

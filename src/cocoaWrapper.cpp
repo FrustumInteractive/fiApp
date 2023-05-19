@@ -13,10 +13,11 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 
-#include "application/appDefines.h"
+#include "fi/app/appDefines.h"
 
 extern "C" void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *scaleFactor);
 extern "C" void CWGetWindowSizeC(int *wid,int *hei);
+extern "C" void CWGetScreenSizeC(int *w, int *h);
 extern "C" void CWPollDeviceC(void);
 extern "C" void CWSleepC(int ms);
 extern "C" int CWPassedTimeC(void);
@@ -29,6 +30,8 @@ extern "C" int CWKeyStateC(eKeyCode kc);
 extern "C" void CWChangeToProgramDirC(void);
 extern "C" int CWCheckExposureC(void);
 extern "C" int CWCheckQuitMessageC(void);
+extern "C" void CWWarpMouseCursorPositionC(unsigned x, unsigned y);
+
 
 void CWOpenWindow(int x0, int y0, int width, int height, int useDoubleBuffer, float *scaleFactor)
 {
@@ -38,6 +41,11 @@ void CWOpenWindow(int x0, int y0, int width, int height, int useDoubleBuffer, fl
 void CWGetWindowSize(int &width,int &height)
 {
 	CWGetWindowSizeC(&width, &height);
+}
+
+void CWGetScreenSize(int &w, int &h)
+{
+	CWGetScreenSizeC(&w, &h);
 }
 
 void CWPollDevice(void)
@@ -98,5 +106,10 @@ int CWCheckQuitMessage(void)
 void CWChangeToProgramDir(void)
 {
 	CWChangeToProgramDirC();
+}
+
+void CWWarpMouseCursorPosition(unsigned x, unsigned y)
+{
+	CWWarpMouseCursorPositionC(x, y);
 }
 

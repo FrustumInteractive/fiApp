@@ -1,0 +1,157 @@
+#ifndef _APPDEFINES_H
+#define _APPDEFINES_H
+
+#ifdef __APPLE__
+	#include "TargetConditionals.h"
+	#if TARGET_IPHONE_SIMULATOR
+		// iOS Simulator
+		#define IOS
+		#define SIMULATOR
+		#define _IOS
+		#define _SIMULATOR
+	#elif TARGET_OS_IPHONE
+		// iOS device
+		#define _IOS
+		#define IOS
+	#elif TARGET_OS_MAC
+		// Other kinds of Mac OS
+		#if __has_feature(objc_arc)
+			#define ARC
+		#endif
+	#else
+		#error "Unknown Apple platform"
+	#endif
+#else
+	#if LINUX
+	#elif __ANDROID__
+		#define _ANDROID
+	#else
+	#endif /* LINUX */
+#endif /* __APPLE__ */
+
+#define WND_FULLSCREEN 1
+#define WND_BORDERLESS 2
+
+extern void* _glContext;
+extern void* _glPixelFormat;
+
+enum eMouseEvent
+{
+	MOUSEEVENT_NONE,
+	MOUSEEVENT_LBUTTONDOWN,
+	MOUSEEVENT_LBUTTONUP,
+	MOUSEEVENT_MBUTTONDOWN,
+	MOUSEEVENT_MBUTTONUP,
+	MOUSEEVENT_RBUTTONDOWN,
+	MOUSEEVENT_RBUTTONUP,
+	MOUSEEVENT_MOVE
+};
+
+typedef enum eKeyCode
+{
+	KEY_NULL,
+	KEY_SPACE,
+	KEY_0,
+	KEY_1,
+	KEY_2,
+	KEY_3,
+	KEY_4,
+	KEY_5,
+	KEY_6,
+	KEY_7,
+	KEY_8,
+	KEY_9,
+	KEY_A,
+	KEY_B,
+	KEY_C,
+	KEY_D,
+	KEY_E,
+	KEY_F,
+	KEY_G,
+	KEY_H,
+	KEY_I,
+	KEY_J,
+	KEY_K,
+	KEY_L,
+	KEY_M,
+	KEY_N,
+	KEY_O,
+	KEY_P,
+	KEY_Q,
+	KEY_R,
+	KEY_S,
+	KEY_T,
+	KEY_U,
+	KEY_V,
+	KEY_W,
+	KEY_X,
+	KEY_Y,
+	KEY_Z,
+	KEY_ESC,
+	KEY_F1,
+	KEY_F2,
+	KEY_F3,
+	KEY_F4,
+	KEY_F5,
+	KEY_F6,
+	KEY_F7,
+	KEY_F8,
+	KEY_F9,
+	KEY_F10,
+	KEY_F11,
+	KEY_F12,
+	KEY_PRINTSCRN,
+	KEY_CAPSLOCK,
+	KEY_SCROLLLOCK,
+	KEY_PAUSEBREAK,
+	KEY_BS,
+	KEY_TAB,
+	KEY_ENTER,
+	KEY_SHIFT,
+	KEY_CTRL,
+	KEY_ALT,
+	KEY_INS,
+	KEY_DEL,
+	KEY_HOME,
+	KEY_END,
+	KEY_PAGEUP,
+	KEY_PAGEDOWN,
+	KEY_UP,
+	KEY_DOWN,
+	KEY_LEFT,
+	KEY_RIGHT,
+	KEY_NUMLOCK,
+	KEY_TILDA,
+	KEY_MINUS,
+	KEY_PLUS,
+	KEY_LBRACKET,
+	KEY_RBRACKET,
+	KEY_BACKSLASH,
+	KEY_SEMICOLON,
+	KEY_SINGLEQUOTE,
+	KEY_COMMA,
+	KEY_DOT,
+	KEY_SLASH,
+	KEY_TEN0,
+	KEY_TEN1,
+	KEY_TEN2,
+	KEY_TEN3,
+	KEY_TEN4,
+	KEY_TEN5,
+	KEY_TEN6,
+	KEY_TEN7,
+	KEY_TEN8,
+	KEY_TEN9,
+	KEY_TENDOT,
+	KEY_TENSLASH,
+	KEY_TENSTAR,
+	KEY_TENMINUS,
+	KEY_TENPLUS,
+	KEY_TENENTER,
+	KEY_WHEELUP,
+	KEY_WHEELDOWN,
+
+KEY_NUM_KEYCODE
+}eKeyCode;
+
+#endif /* _APPDEFINES_H*/

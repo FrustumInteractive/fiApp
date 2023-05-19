@@ -6,7 +6,7 @@
 *		Copyright Frustum Interactive Inc. - All rights reserved.
 */
 
-#include "Application/D3D9App.h"
+#include "fi/app/D3D9App.h"
 #include <stdio.h>
 
 D3D9App::D3D9App(const int argc, const char *argv[]) :

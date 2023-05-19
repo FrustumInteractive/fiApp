@@ -10,13 +10,16 @@
 #include <iostream>
 #include <string>
 
-#include "application/mobileApp.h"
+#include "fi/app/mobileApp.h"
 
 #ifndef __ANDROID_API__
 #include <mach-o/dyld.h>
 #endif
 
 using namespace std;
+
+void *_glContext = 0;
+void *_glPixelFormat = 0;
 
 MobileApp::MobileApp(const int argc, const char *argv[]) :
 	Application(argc, argv)

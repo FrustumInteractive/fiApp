@@ -3,11 +3,11 @@ MKPATH=$(abspath $(lastword $(MAKEFILE_LIST)))
 SOURCEDIR=src
 TOPDIR=../../..
 INCDIR=-I$(TOPDIR)/include
-LIBDIR=-L$(TOPDIR)/lib
+#LIBDIR=-L$(TOPDIR)/lib
 
-LIBS_LINUX= -lgfxApp -ldl -lGL -lX11
-LIBS_W32= -ld3d9 -static -lgfxApp -lglew32s -lopengl32 -lgdi32
-LIBS_OSX= -lgfxApp -framework Cocoa -framework OpenGL
+LIBS_LINUX= -lfiApp -ldl -lGL -lX11
+LIBS_W32= -ld3d9 -static -lfigfx -lglew32s -lopengl32 -lgdi32
+LIBS_OSX= -lfiApp -framework Cocoa -framework OpenGL
 
 ### Input Source Files
 C_FILES=
@@ -35,7 +35,7 @@ DEP_WIN32=
 DEP_OSX=
 DEP_LINUX=
 DEPENDENCIES=\
-	$(TOPDIR)/projects/gfxApp
+	$(TOPDIR)/projects/fiApp
 
 ### Post Build Steps
 POSTBUILD=

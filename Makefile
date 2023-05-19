@@ -20,7 +20,7 @@ CXX_FILES=\
 #OBJCXX_FILES=
 
 C_FILES_LINUX=\
-	glProcs.c
+	gl/glProcs.c
 CXX_FILES_LINUX=\
 	x11App.cpp
 
@@ -30,7 +30,7 @@ CXX_FILES_WIN=\
 	d3d9App.cpp
 
 C_FILES_OSX=\
-	glProcs.c
+	gl/glProcs.c
 CXX_FILES_OSX=\
 	osxApp.cpp \
 	cocoaWrapper.cpp
@@ -40,7 +40,7 @@ OBJC_FILES_OSX=\
 	cocoaGLWindow.mm
 
 ### Targets / Output / Resource folders and files
-TARGET=libgfxApp.a
+TARGET=libfiApp.a
 CLEAN_TARGET=$(TARGET)
 RESOURCES=
 

@@ -6,7 +6,7 @@
 *		Copyright Frustum Interactive Inc. - All rights reserved.
 */
 
-#include "application/oglApp.h"
+#include "fi/app/oglApp.h"
 #include "debug/trace.h"
 #include <stdio.h>
 #include <cstring>
@@ -59,8 +59,8 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 static bool ctxErrorOccurred = false;
 static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 {
-    ctxErrorOccurred = true;
-    return 0;
+	ctxErrorOccurred = true;
+	return 0;
 }
 #endif
 
@@ -210,7 +210,7 @@ void OGLApp::gfxAPIInit()
 			FI::LOG( "Created GL 3.2 context" );
 		else
 		{
-			// Couldn't create GL 3.0 context.  Fall back to old-style 2.x context.
+			// Couldn't create GL 3.2 context.  Fall back to old-style 2.x context.
 			// When a context version below 3.0 is requested, implementations will
 			// return the newest context version compatible with OpenGL versions less
 			// than version 3.0.
@@ -253,7 +253,7 @@ void OGLApp::gfxAPIInit()
 
 #endif /*LINUX*/
 
-#if !defined(IOS) && !defined(MISC)
+#if !defined(IOS) && !defined(MISC) /*&& !defined(OSX)*/
 
 	// Load linux GL 2.1 functions
 	FI::LOG("loading OpenGL procedures...");
@@ -265,11 +265,11 @@ void OGLApp::gfxAPIInit()
 	glGetIntegerv(GL_MAJOR_VERSION, &m_majorVersion);
 	glGetIntegerv(GL_MINOR_VERSION, &m_minorVersion);
 
-#if defined(_ANDROID)
-    // android hack to force to GLES 2
-    if(m_majorVersion > 2)
-        m_majorVersion = 2;
-#endif
+	#if defined(_ANDROID)
+		// android hack to force to GLES 2
+		if(m_majorVersion > 2)
+			m_majorVersion = 2;
+	#endif
 
 	if(!m_majorVersion)
 	{
@@ -291,9 +291,24 @@ void OGLApp::gfxAPIInit()
 
 	if(m_majorVersion > 2)
 	{
-		// we're using a new context capable of 3x core profiles.
 		initGL21Funcs();
-		initGL30Funcs();
+
+		if (m_majorVersion == 3)
+		{
+			switch (m_minorVersion)
+			{
+				case 3:
+				case 2: initGL32Funcs();
+				case 1: initGL31Funcs();
+				case 0: initGL30Funcs();
+			}
+		}
+		else
+		{
+			initGL30Funcs();
+			initGL31Funcs();
+			initGL32Funcs();
+		}
 
 		int numExt = 0, count = 0;
 
@@ -440,7 +455,7 @@ void OGLApp::gfxAPIDeinit()
 	glXDestroyContext(m_display, m_glContext);
 #endif /*LINUX*/
 
-#if !defined(IOS) && !defined(ANDROID) && !defined(MISC)
+#if !defined(IOS) && !defined(ANDROID) && !defined(MISC) /*&& !defined(OSX) */
 	close_libgl();
 #endif
 }

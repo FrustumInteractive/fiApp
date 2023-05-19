@@ -8,8 +8,8 @@
 
 #include <iostream>
 
-#include "Application/console.h"
-#include "Application/Win32App.h"
+#include "fi/app/console.h"
+#include "fi/app/Win32App.h"
 
 using namespace std;
 

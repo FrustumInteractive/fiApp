@@ -1,12 +1,15 @@
-#include "application/oglApp.h"
+#ifndef _APP_H
+#define _APP_H
+
+#include "fi/app/oglApp.h"
 
 #ifdef WIN32
 #include "application/d3d9App.h"
 //#define D3D9
 #endif // WIN32
 
-#include "application/threading.h"
-#include "application/json.h"
+#include "fi/app/threading.h"
+#include "fi/app/json.h"
 
 #ifdef D3D9
 class MyApp : public D3D9App
@@ -31,8 +34,11 @@ public:
 	
 private:
 
-	unsigned int m_shaderProgram;
-	unsigned int m_vertexBuffer;
-	unsigned int m_vPosAttrib;
+	unsigned int
+		m_shaderProgram,
+		m_vertexBuffer,
+		m_vertexArrayObject;
 
 };
+
+#endif //_APP_H

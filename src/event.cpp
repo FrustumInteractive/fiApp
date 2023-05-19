@@ -1,4 +1,4 @@
-#include "application/event.h"
+#include "fi/app/event.h"
 #include <memory.h>
 #include <algorithm>
 
@@ -73,6 +73,7 @@ void EventListener::notify(FI::Event e)
 				m_eventListeners[i]->onMouseRightRelease(e);
 				break;
 			case EVENT_MOUSE_MOVE:
+				m_eventListeners[i]->onMouseMove(e);
 				break;
 			case EVENT_HIDE:
 				m_eventListeners[i]->onHide(e);

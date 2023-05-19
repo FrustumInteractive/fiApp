@@ -123,7 +123,7 @@
 			(float)[aTouch locationInView:self.view].x*_scaleFactor,
 			(float)[aTouch locationInView:self.view].y*_scaleFactor
 		};
-		e.setData(pos);
+		e.setData(pos[0], pos[1]);
 		_app.setEvent(e);
     }
 }
@@ -138,7 +138,7 @@
 			(float)[aTouch locationInView:self.view].x*_scaleFactor,
 			(float)[aTouch locationInView:self.view].y*_scaleFactor
 		};
-		e.setData(pos);
+		e.setData(pos[0], pos[1]);
 		_app.setEvent(e);
     }
 }
@@ -153,7 +153,7 @@
 			(float)[aTouch locationInView:self.view].x*_scaleFactor,
 			(float)[aTouch locationInView:self.view].y*_scaleFactor
 		};
-		e.setData(pos);
+		e.setData(pos[0], pos[1]);
 		_app.setEvent(e);
     }
 }
