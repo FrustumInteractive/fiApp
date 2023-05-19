@@ -1,8 +1,8 @@
 /*
 * d3d9App.cpp
 *
-*  Created on: Aug 10, 2015
-*      Author: Roger Dass
+*	Created on: Aug 10, 2015
+*		Author: Roger Dass
 *		Copyright Frustum Interactive Inc. - All rights reserved.
 */
 
@@ -24,9 +24,9 @@ void D3D9App::gfxAPIInit()
 {
 	printf("Initializing Direct3D 9 Subsystem\n");
 	// Check For The Correct DirectX 3D version
-    m_pD3D = Direct3DCreate9( D3D_SDK_VERSION );
-    if ( m_pD3D == NULL )
-    {
+	m_pD3D = Direct3DCreate9( D3D_SDK_VERSION );
+	if ( m_pD3D == NULL )
+	{
 		destroyWindow();		// Reset The Display
 		MessageBox(NULL, "Can't find D3D SDK Version 9.", "ERROR", MB_OK|MB_ICONEXCLAMATION);
 		return;		// Return FALSE
@@ -35,8 +35,8 @@ void D3D9App::gfxAPIInit()
 	// Tell the window how we want things to be..
 	D3DPRESENT_PARAMETERS d3dpp =
 	{
-		(UINT)m_width,				// Back Buffer Width
-		(UINT)m_height,				// Back Buffer Height
+		(UINT)m_width,			// Back Buffer Width
+		(UINT)m_height,			// Back Buffer Height
 		D3DFMT_X8R8G8B8,		// Back Buffer Format (Color Depth)
 		1,						// Back Buffer Count (Double Buffer)
 		D3DMULTISAMPLE_NONE,	// No Multi Sample Type
@@ -52,12 +52,12 @@ void D3D9App::gfxAPIInit()
 	};
 
 	// Check The Wanted Surface Format
-	if ( FAILED( m_pD3D->CheckDeviceFormat( 
-		D3DADAPTER_DEFAULT, 
+	if ( FAILED( m_pD3D->CheckDeviceFormat(
+		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
-		d3dpp.BackBufferFormat, 
+		d3dpp.BackBufferFormat,
 		D3DUSAGE_DEPTHSTENCIL,
-		D3DRTYPE_SURFACE, 
+		D3DRTYPE_SURFACE,
 		d3dpp.AutoDepthStencilFormat ) ) )
 	{
 		destroyWindow();		// Reset The Display
@@ -65,17 +65,17 @@ void D3D9App::gfxAPIInit()
 		return;		// Return FALSE
 	}
 
-    // Create The DirectX 3D Device 
-	if(FAILED( m_pD3D->CreateDevice( 
-		D3DADAPTER_DEFAULT, 
-		D3DDEVTYPE_HAL, 
+	// Create The DirectX 3D Device
+	if(FAILED( m_pD3D->CreateDevice(
+		D3DADAPTER_DEFAULT,
+		D3DDEVTYPE_HAL,
 		m_hWnd,
 		D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 		&d3dpp, &m_pD3DDevice ) ) )
 	{
-		destroyWindow();		// Reset The Display
+		destroyWindow();	// Reset The Display
 		MessageBox(NULL, "Can't Create DirectX 3D Device.", "ERROR", MB_OK|MB_ICONEXCLAMATION);
-		return;		// Return FALSE
+		return;	// Return FALSE
 	}
 
 	ShowWindow( m_hWnd, SW_SHOW );	// Show The Window
@@ -96,16 +96,16 @@ void D3D9App::gfxAPIInit()
 void D3D9App::gfxAPIDraw()
 {
 	// Clear Screen And Depth Buffer
-    m_pD3DDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
-		        D3DCOLOR_COLORVALUE(0.0f,0.0f,0.0f,0.0f), 1.0f, 0 );
+	m_pD3DDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
+		D3DCOLOR_COLORVALUE(0.0f,0.0f,0.0f,0.0f), 1.0f, 0 );
 
-    m_pD3DDevice->BeginScene();
-				
-    // Place your code here!
+	m_pD3DDevice->BeginScene();
 
-    m_pD3DDevice->EndScene();
-	
-    m_pD3DDevice->Present( NULL, NULL, NULL, NULL );	// Display Result
+	// Place your code here!
+
+	m_pD3DDevice->EndScene();
+
+	m_pD3DDevice->Present( NULL, NULL, NULL, NULL );	// Display Result
 
 	SwapBuffers(m_hDC);
 
