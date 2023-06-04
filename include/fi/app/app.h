@@ -13,7 +13,7 @@
 #include "fi/app/event.h"
 #include "fi/app/fileIO.h"
 
-#include "fiUtil.h"
+#include "fi/fiUtil.h"
 
 #include <string>
 #include <vector>
@@ -79,7 +79,8 @@ protected:
 		m_bActive,        // Window Active Flag
 		m_bQuit,
 		m_bRenderOnRefresh,
-		m_bRenderRequested;
+		m_bRenderRequested,
+		m_bGfxAPIInitialized = false;
 
 	float m_scaleFactor;
 

@@ -7,7 +7,7 @@
 */
 
 #include "fi/app/oglApp.h"
-#include "debug/trace.h"
+#include "fi/debug/trace.h"
 #include <stdio.h>
 #include <cstring>
 #include <string>
@@ -421,10 +421,12 @@ void OGLApp::gfxAPIInit()
 #endif
 
 	initScene();
+	m_bGfxAPIInitialized = true; // prevent drawing until init done
 }
 
 void OGLApp::gfxAPIDraw()
 {
+	if (!m_bGfxAPIInitialized) return;
 	drawScene();
 	glFlush();
 	m_bRenderRequested = false;
@@ -432,6 +434,7 @@ void OGLApp::gfxAPIDraw()
 
 void OGLApp::gfxAPIDeinit()
 {
+	m_bGfxAPIInitialized = false;
 	deinitScene();
 
 #ifdef WIN32

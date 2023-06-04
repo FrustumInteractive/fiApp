@@ -12,7 +12,7 @@
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include "fi/app/x11App.h"
-#include "debug/trace.h"
+#include "fi/debug/trace.h"
 
 typedef struct {
 	unsigned long   flags;
@@ -265,8 +265,8 @@ void X11App::mainloop()
 			else if(strncmp(key_string, "Down", 4) == 0) kc=KEY_DOWN;
 			else if(strncmp(key_string, "F1", 2) == 0) kc=KEY_F1;
 			else if(strncmp(key_string, "Escape", 5) == 0) kc=KEY_ESC;
-        	else if(strncmp(key_string, "q", 1) == 0) kc=KEY_Q;
-			
+			else if(strncmp(key_string, "q", 1) == 0) kc=KEY_Q;
+
 			e.setData((unsigned int)kc,0);
 			setEvent(e);
 		}
