@@ -252,20 +252,47 @@ void X11App::mainloop()
 {
 	while(!m_bQuit) 
 	{
-		if(XCheckWindowEvent(m_display, m_window, KeyPressMask, &m_xEvent))
+		if(XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &m_xEvent))
 		{
-			char *key_string = XKeysymToString(XkbKeycodeToKeysym(m_display, m_xEvent.xkey.keycode, 0, 0));
+			auto ks = XkbKeycodeToKeysym(m_display, m_xEvent.xkey.keycode, 0, 0);
 			FI::Event e;
 			eKeyCode kc;
-			e.setType(FI::EVENT_KEY_PRESS);
 
-			if(strncmp(key_string, "Left", 4) == 0) kc=KEY_LEFT;
-			else if(strncmp(key_string, "Right", 5) == 0) kc=KEY_RIGHT;
-			else if(strncmp(key_string, "Up", 2) == 0) kc=KEY_UP;
-			else if(strncmp(key_string, "Down", 4) == 0) kc=KEY_DOWN;
-			else if(strncmp(key_string, "F1", 2) == 0) kc=KEY_F1;
-			else if(strncmp(key_string, "Escape", 5) == 0) kc=KEY_ESC;
-			else if(strncmp(key_string, "q", 1) == 0) kc=KEY_Q;
+			switch (m_xEvent.type)
+			{
+				case KeyPress:
+					e.setType(FI::EVENT_KEY_PRESS); break;
+				case KeyRelease:
+					e.setType(FI::EVENT_KEY_RELEASE); break;
+			}
+
+			// map X11 Keysym values to our own
+			if (ks >= XK_0 && ks <= XK_9)
+			{
+				kc = (eKeyCode)((int)KEY_0 + ks - XK_0);
+			}
+			else if (ks >= XK_A && ks <= XK_Z)
+			{
+				kc = (eKeyCode)((int)KEY_A + ks - XK_A);
+			}
+			else if (ks >= XK_a && ks <= XK_z)
+			{
+				kc = (eKeyCode)((int)KEY_A + ks - XK_a);
+			}
+			else
+			{
+				switch (ks)
+				{
+					case XK_F1: kc=KEY_F1; break;
+					case XK_Escape: kc=KEY_ESC; break;
+					case XK_Down: kc=KEY_DOWN; break;
+					case XK_Up: kc=KEY_UP; break;
+					case XK_Left: kc=KEY_LEFT; break;
+					case XK_Right: kc=KEY_RIGHT; break;
+					case XK_Return: kc=KEY_ENTER; break;
+					case XK_space: kc=KEY_SPACE; break;
+				}
+			}
 
 			e.setData((unsigned int)kc,0);
 			setEvent(e);
@@ -279,7 +306,8 @@ void X11App::mainloop()
 			switch(m_xEvent.type)
 			{
 				case ButtonPress:
-					switch(m_xEvent.xbutton.button) {
+					switch(m_xEvent.xbutton.button)
+					{
 						case Button1:
 							e.setType(FI::EVENT_MOUSE_LEFT_CLICK);
 							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
@@ -294,7 +322,8 @@ void X11App::mainloop()
 					break;
 
 				case ButtonRelease:
-					switch(m_xEvent.xbutton.button) {
+					switch(m_xEvent.xbutton.button)
+					{
 						case Button1:
 							e.setType(FI::EVENT_MOUSE_LEFT_RELEASE);
 							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
@@ -309,17 +338,20 @@ void X11App::mainloop()
 					break;
 
 				case MotionNotify:
-					if(m_xEvent.xmotion.state & Button1MotionMask) {
+					if(m_xEvent.xmotion.state & Button1MotionMask)
+					{
 						e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
 						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
 						setEvent(e);
 					}
-					else if(m_xEvent.xmotion.state & Button2MotionMask) {
+					else if(m_xEvent.xmotion.state & Button2MotionMask)
+					{
 						e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
 						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
 						setEvent(e);
 					}
-					else if(m_xEvent.xmotion.state & Button3MotionMask) {
+					else if(m_xEvent.xmotion.state & Button3MotionMask)
+					{
 						e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
 						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
 						setEvent(e);
@@ -328,7 +360,7 @@ void X11App::mainloop()
 					e.setType(FI::EVENT_MOUSE_MOVE);
 					e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
 					break;
-					
+
 				default:
 					break;
 			}
@@ -341,6 +373,11 @@ void X11App::mainloop()
 		glXSwapBuffers(m_display, m_window);
 		usleep(16667);
 	}
+}
+
+void X11App::warpMouseCursorPosition(unsigned int x, unsigned int y)
+{
+	XWarpPointer(m_display, None, m_window, 0, 0, 0, 0, x, y);
 }
 
 void X11App::swapBuffers()

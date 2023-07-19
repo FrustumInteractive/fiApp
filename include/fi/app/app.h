@@ -41,9 +41,6 @@ public:
 	void setEvent(FI::Event e);
 	void setRenderOnRefresh(bool b){ m_bRenderOnRefresh = b;}
 
-	// mouse
-	void warpMouseCursorPosition(unsigned int x, unsigned int y){}
-
 	// windows creation
 	virtual void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen)=0;
 	virtual void createWindowEx( 
@@ -59,6 +56,9 @@ public:
 	virtual void mainloop() {}
 
 	virtual void resize(int width, int height) {}
+
+	virtual void warpMouseCursorPosition(unsigned int x, unsigned int y){}
+
 	virtual void gfxAPIInit() {}
 	virtual void gfxAPIDraw() {}
 	virtual void gfxAPIDeinit() {}
