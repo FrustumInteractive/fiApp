@@ -55,6 +55,8 @@ protected:
 
 	int m_glxMinor;
 	int m_glxMajor;
+
+	int m_usecondsSinceLastDisplay = 0;
 };
 
 #endif /*_X11APP_H*/

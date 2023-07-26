@@ -29,8 +29,11 @@ public:
 
 	// EventListener overrides
 	void onKeyPress(FI::Event e) override;
+	void onKeyRelease(FI::Event e) override;
 	void onMouseLeftClick(FI::Event e) override;
+	void onMouseLeftRelease(FI::Event e) override;
 	void onMouseRightClick(FI::Event e) override;
+	void onMouseRightRelease(FI::Event e) override;
 	
 private:
 

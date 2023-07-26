@@ -63,6 +63,32 @@ void MyApp::onKeyPress(FI::Event e)
 		case KEY_Q:
 			m_bQuit = true;
 			break;
+
+		case KEY_W: FI::LOG("Key W pressed"); break;
+		case KEY_A: FI::LOG("Key A pressed"); break;
+		case KEY_S: FI::LOG("Key S pressed"); break;
+		case KEY_D: FI::LOG("Key D pressed"); break;
+
+		default:
+			return;
+	}
+}
+
+void MyApp::onKeyRelease(FI::Event e)
+{
+	eKeyCode kc = (eKeyCode)e.data_uint32()[0];
+	switch(kc)
+	{
+		case KEY_ESC:
+		case KEY_Q:
+			m_bQuit = true;
+			break;
+
+		case KEY_W: FI::LOG("Key W released"); break;
+		case KEY_A: FI::LOG("Key A released"); break;
+		case KEY_S: FI::LOG("Key S released"); break;
+		case KEY_D: FI::LOG("Key D released"); break;
+
 		default:
 			return;
 	}
@@ -75,11 +101,25 @@ void MyApp::onMouseLeftClick(FI::Event e)
 	FI::LOG("LMB click (", x, ",", y, ")");
 }
 
+void MyApp::onMouseLeftRelease(FI::Event e)
+{
+	float x = e.data_float()[0];
+	float y = e.data_float()[1];
+	FI::LOG("LMB release (", x, ",", y, ")");
+}
+
 void MyApp::onMouseRightClick(FI::Event e)
 {
 	float x = e.data_float()[0];
 	float y = e.data_float()[1];
 	FI::LOG("RMB click (", x, ",", y, ")");
+}
+
+void MyApp::onMouseRightRelease(FI::Event e)
+{
+	float x = e.data_float()[0];
+	float y = e.data_float()[1];
+	FI::LOG("RMB release (", x, ",", y, ")");
 }
 
 void MyApp::initScene()

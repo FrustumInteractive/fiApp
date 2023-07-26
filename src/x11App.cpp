@@ -41,7 +41,7 @@ void X11App::createWindow(const char *title, int x, int y, int width, int height
 	if(m_bFullscreen) {
 		msk = WND_FULLSCREEN | WND_BORDERLESS;
 	}
-	
+
 	createWindowEx( title, x, y, width, height, msk );
 }
 
@@ -68,11 +68,11 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 	int screenID = DefaultScreen(m_display); //Get the default screen id
 
 	// FBConfigs were added in GLX version 1.3.
-  	if (!glXQueryVersion(m_display, &m_glxMajor, &m_glxMinor) || ((m_glxMajor==1) && (m_glxMinor<2)) || (m_glxMajor<1))
-  	{
+	if (!glXQueryVersion(m_display, &m_glxMajor, &m_glxMinor) || ((m_glxMajor==1) && (m_glxMinor<2)) || (m_glxMajor<1))
+	{
 		FI::LOG("Invalid GLX version:", m_glxMajor, m_glxMinor);
 		exit(1);
-  	}
+	}
 
 	// - VISUAL INFO -
 	static int att[] =
@@ -103,8 +103,8 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		GLX_DEPTH_SIZE,	24,
 		GLX_DOUBLEBUFFER,
 		None
-	};	
-	
+	};
+
 	if(m_glxMinor == 2)
 	{
 		m_attributes = att_simple;
@@ -115,53 +115,53 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		}
 		else {
 			FI::LOG("visual selected: ", (void *)m_visualInfo->visualid);
-		}	
+		}
 	}
 	else
 	{
 		m_attributes = att;
 		// Getting matching framebuffer configs
-  		int fbcount;
-  		GLXFBConfig* fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &fbcount);
-  		if (!fbc)
-  		{
-    			FI::LOG( "Failed to retrieve a framebuffer configuration" );
-    			exit(1);
- 		}
+		int fbcount;
+		GLXFBConfig* fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &fbcount);
+		if (!fbc)
+		{
+				FI::LOG( "Failed to retrieve a framebuffer configuration" );
+				exit(1);
+		}
 		FI::LOG( "Found", fbcount, "matching FB configs." );	
 
 		// Pick the FB config/visual with the most samples per pixel
-  		FI::LOG("Getting XVisualInfos" );
-  		int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+		FI::LOG("Getting XVisualInfos" );
+		int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
 
-  		int i;
-  		for (i=0; i<fbcount; ++i)
-  		{
-    			XVisualInfo *vi = glXGetVisualFromFBConfig( m_display, fbc[i] );
-    			if ( vi )
-    			{
-      				int samp_buf, samples;
-      				glXGetFBConfigAttrib( m_display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
-      				glXGetFBConfigAttrib( m_display, fbc[i], GLX_SAMPLES       , &samples  );
-      
-      				FI::LOG("Matching fbconfig:", i, "visual ID:", vi->visualid, "SAMPLE_BUFFERS:", samp_buf,"SAMPLES:", samples );
+		int i;
+		for (i=0; i<fbcount; ++i)
+		{
+				XVisualInfo *vi = glXGetVisualFromFBConfig( m_display, fbc[i] );
+				if ( vi )
+				{
+					int samp_buf, samples;
+					glXGetFBConfigAttrib( m_display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
+					glXGetFBConfigAttrib( m_display, fbc[i], GLX_SAMPLES       , &samples  );
+		
+					FI::LOG("Matching fbconfig:", i, "visual ID:", vi->visualid, "SAMPLE_BUFFERS:", samp_buf,"SAMPLES:", samples );
 
-      				if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) )
-        				best_fbc = i, best_num_samp = samples;
-      				if ( worst_fbc < 0 || !samp_buf || samples < worst_num_samp )
-        				worst_fbc = i, worst_num_samp = samples;
-    			}
-    			XFree( vi );
-  		}
+					if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) )
+						best_fbc = i, best_num_samp = samples;
+					if ( worst_fbc < 0 || !samp_buf || samples < worst_num_samp )
+						worst_fbc = i, worst_num_samp = samples;
+				}
+				XFree( vi );
+		}
 
-  		m_bestFbc = fbc[ best_fbc ];
+		m_bestFbc = fbc[ best_fbc ];
 
-  		// Be sure to free the FBConfig list allocated by glXChooseFBConfig()
-  		XFree( fbc );
+		// Be sure to free the FBConfig list allocated by glXChooseFBConfig()
+		XFree( fbc );
 
-  		// Get a visual
-  		m_visualInfo = glXGetVisualFromFBConfig( m_display, m_bestFbc );
-  	}
+		// Get a visual
+		m_visualInfo = glXGetVisualFromFBConfig( m_display, m_bestFbc );
+	}
 
 	FI::LOG("Chosen visual ID:", m_visualInfo->visualid );
 
@@ -169,8 +169,8 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 
 	m_setWindowAttributes.colormap = m_colormap;
 	m_setWindowAttributes.border_pixel = 0;
-	m_setWindowAttributes.event_mask = 
-		ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | 
+	m_setWindowAttributes.event_mask =
+		ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask |
 		PointerMotionMask | ButtonMotionMask | Button1MotionMask;
 
 	// FULLSCREEN
@@ -226,16 +226,16 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 			XWarpPointer(m_display, None, m_window, 0, 0, 0, 0, 0, 0);
 			XMapRaised(m_display, m_window);	//window on top
 			XGrabKeyboard(m_display, m_window, True, GrabModeAsync, GrabModeAsync, CurrentTime);
-			XGrabPointer(m_display, m_window, True, 
-				ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask, 
+			XGrabPointer(m_display, m_window, True,
+				ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask,
 				GrabModeAsync, GrabModeAsync, m_window, None, CurrentTime);
 		}
 		Hints hints;
 		Atom property;
 		hints.flags = 2;        // Specify that we're changing the window decorations.
-		hints.decorations = 0;  // 0 (false) means that window decorations should go bye-bye.
+		hints.decorations = 0;  // 0 (false) means no window decorations.
 		property = XInternAtom( m_display, "_MOTIF_WM_HINTS", True);
-		XChangeProperty(m_display, m_window, property, property, 32, PropModeReplace, (unsigned char *)&hints, 5);		
+		XChangeProperty(m_display, m_window, property, property, 32, PropModeReplace, (unsigned char *)&hints, 5);
 	}
 
 	gfxAPIInit();
@@ -250,10 +250,19 @@ void X11App::destroyWindow()
 
 void X11App::mainloop()
 {
-	while(!m_bQuit) 
+	while (!m_bQuit)
 	{
-		if(XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &m_xEvent))
+		if (XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &m_xEvent))
 		{
+			XEvent nextEvent;
+			if (XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &nextEvent))
+			{
+				if (m_xEvent.xkey.serial == nextEvent.xkey.serial)
+				{
+					// discard these two events and continue the loop. Same serial ID is a sign that pressed/release pair is auto-gen'd
+					continue;
+				}
+			}
 			auto ks = XkbKeycodeToKeysym(m_display, m_xEvent.xkey.keycode, 0, 0);
 			FI::Event e;
 			eKeyCode kc;
@@ -294,12 +303,12 @@ void X11App::mainloop()
 				}
 			}
 
-			e.setData((unsigned int)kc,0);
+			e.setData((unsigned int)kc, 0);
 			setEvent(e);
 		}
 
 
-		if(XCheckWindowEvent(m_display,	m_window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask, &m_xEvent)) 
+		if(XCheckWindowEvent(m_display, m_window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask, &m_xEvent))
 		{
 			FI::Event e;
 
@@ -368,10 +377,15 @@ void X11App::mainloop()
 			setEvent(e);
 		}
 
-		XSync(m_display, true); //discard event queue (needed to make mouse response immediate)
-		gfxAPIDraw();
-		glXSwapBuffers(m_display, m_window);
-		usleep(16667);
+		m_usecondsSinceLastDisplay += 1041;
+		if (m_usecondsSinceLastDisplay > 16667)
+		{
+			XSync(m_display, true); //discard event queue (needed to make mouse response immediate)
+			gfxAPIDraw();
+			glXSwapBuffers(m_display, m_window);
+			m_usecondsSinceLastDisplay = 0;
+		}
+		usleep(1041);
 	}
 }
 
