@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace FI {
 	std::vector<std::string> filesInDirectory( std::string dirPath, std::string ext );
