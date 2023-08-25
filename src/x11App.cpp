@@ -377,15 +377,16 @@ void X11App::mainloop()
 			setEvent(e);
 		}
 
-		m_usecondsSinceLastDisplay += 1041;
-		if (m_usecondsSinceLastDisplay > 16667)
+
+		m_usecondsSinceLastDisplay += m_timeToNextInputUpdate*1000.0f;
+		if (m_usecondsSinceLastDisplay > m_timeToNextDisplayUpdate*1000.0f)
 		{
 			XSync(m_display, true); //discard event queue (needed to make mouse response immediate)
 			gfxAPIDraw();
 			glXSwapBuffers(m_display, m_window);
 			m_usecondsSinceLastDisplay = 0;
 		}
-		usleep(1041);
+		usleep(m_timeToNextInputUpdate*1000.0f);
 	}
 }
 

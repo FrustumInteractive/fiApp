@@ -10,18 +10,7 @@
 #include "fi/app/fileIO.h"
 
 Application::Application(const int argc, const char *argv[])
-	: m_width(1)
-	, m_height(1)
-	, m_xpos(0)
-	, m_ypos(0)
-	, m_bFullscreen(false)
-	, m_bBorderless(false)
-	, m_bActive(false)
-	, m_bQuit(false)
-	, m_bRenderOnRefresh(true)
-	, m_bRenderRequested(false)
-	, m_scaleFactor(1.0f)
-	, m_title("Application")
+	: m_title("Application")
 	, m_executiblePath("")
 	, m_documentPath("")
 {

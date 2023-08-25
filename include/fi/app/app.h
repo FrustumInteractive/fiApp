@@ -40,6 +40,8 @@ public:
 	void setDocumentPath( std::string path ){ m_documentPath = path;}
 	void setEvent(FI::Event e);
 	void setRenderOnRefresh(bool b){ m_bRenderOnRefresh = b;}
+	void setDisplayUpdateTimeInterval(float t){m_timeToNextDisplayUpdate = t;}
+	void setInputUpdateTimeInterval(float t){m_timeToNextInputUpdate = t;}
 
 	// windows creation
 	virtual void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen)=0;
@@ -66,23 +68,26 @@ public:
 protected:
 
 	int
-		m_width,
-		m_height,
-		m_xpos,
-		m_ypos,
+		m_width = 1,
+		m_height = 1,
+		m_xpos = 0,
+		m_ypos = 0,
 		m_screenWidth,
 		m_screenHeight;
 
 	bool
-		m_bFullscreen,
-		m_bBorderless,
-		m_bActive,        // Window Active Flag
-		m_bQuit,
-		m_bRenderOnRefresh,
-		m_bRenderRequested,
+		m_bFullscreen = false,
+		m_bBorderless = false,
+		m_bActive = false,        // Window Active Flag
+		m_bQuit = false,
+		m_bRenderOnRefresh = true,
+		m_bRenderRequested = false,
 		m_bGfxAPIInitialized = false;
 
-	float m_scaleFactor;
+	float
+		m_scaleFactor = 1,
+		m_timeToNextDisplayUpdate = 16.777f, // millisec
+		m_timeToNextInputUpdate = 1.0f;   // millisec
 
 	const char *m_title;
 
