@@ -26,7 +26,7 @@
 			class MetalApp : public MobileApp
 		#elif TARGET_OS_MAC
 			// Other kinds of Mac OS
-			//#include <Metal/Metal.hpp>
+			#include <Metal/Metal.hpp>
 			#include "mobileApp.h"
 			class MetalApp : public MobileApp
 		#else
@@ -44,25 +44,11 @@ public:
 	virtual void drawScene() {};
 
 	void resize(int width, int height);
-	
+
 	void gfxAPIInit();
 	void gfxAPIDraw();
 	void gfxAPIDeinit();
 
-	static int majorVersion();
-	static int minorVersion();
-
-	static void* platformGLContextObj();
-	static void* platformGLPixelFormatObj();
-
-protected:
-
-	int m_pixelFormat;
-
-	static int m_majorVersion;
-	static int m_minorVersion;
-	static void* m_glContextObj;
-	static void* m_glPixelFormatObj;
 };
 
 #endif /*_OGLAPP_H*/

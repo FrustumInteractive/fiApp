@@ -17,10 +17,10 @@ public:
 	MobileApp(const int argc = 0, const char *argv[] = 0);
 	virtual ~MobileApp();
 
-	void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen);
-	void destroyWindow();
+	void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen) override;
+	void destroyWindow() override;
 
-	void mainloop();
+	void mainloop() override;
 
 protected:
 	void swapBuffers();
