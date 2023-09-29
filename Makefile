@@ -24,6 +24,9 @@ C_FILES_LINUX=\
 CXX_FILES_LINUX=\
 	x11App.cpp
 
+CXX_FILES_WEB=\
+	webApp.cpp
+
 #C_FILES_WIN
 CXX_FILES_WIN=\
 	win32App.cpp \

@@ -9,9 +9,16 @@
 #ifndef _OGLAPP_H
 #define _OGLAPP_H
 
+#include <functional>
+
 #if defined(WIN32)
 	#include "win32App.h"
 	class OGLApp : public Win32App
+#elif defined(WEB)
+	#include "webApp.h"
+	#define GL_GLEXT_PROTOTYPES 1
+	#include <SDL_opengles2.h>
+	class OGLApp : public WebApp
 #elif defined(LINUX)
 	#include "x11App.h"
 	#include <fi/gl/glcorearb.h>

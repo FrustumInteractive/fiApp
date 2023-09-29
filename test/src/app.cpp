@@ -134,7 +134,7 @@ void MyApp::initScene()
 	};
 
 	// create VAO
-#ifdef IOS
+#if defined(IOS) || defined(WEB)
 	glGenVertexArraysOES(1, &m_vertexArrayObject);
 	glBindVertexArrayOES(m_vertexArrayObject);
 #else
@@ -157,7 +157,7 @@ void MyApp::initScene()
 	float mver = majorVersion() + minorVersion()/10.0f;
 	bool bGLESFlag = false;
 
-#ifdef IOS
+#if defined(IOS) || defined(WEB)
 	bGLESFlag = true;
 #endif
 

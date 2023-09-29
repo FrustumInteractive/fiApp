@@ -8,6 +8,7 @@ INCDIR=-I$(TOPDIR)/include
 LIBS_LINUX= -lfiApp -ldl -lGL -lX11
 LIBS_W32= -ld3d9 -static -lfigfx -lglew32s -lopengl32 -lgdi32
 LIBS_OSX= -lfiApp -framework Cocoa -framework OpenGL
+LIBS_WEB= -lfiApp
 
 ### Input Source Files
 C_FILES=

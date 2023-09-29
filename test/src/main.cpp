@@ -14,7 +14,11 @@ int main( const int argc, const char *argv[] )
 
 	app.createWindow("GFX App", 25, 25, 640, 480, false );
 
+#ifndef WEB
 	app.mainloop( );
+#endif
+
+	FI::LOG("main loop terminated");
 
 	app.destroyWindow();
 

@@ -75,6 +75,8 @@ void *OGLApp::m_glPixelFormatObj = nullptr;
 OGLApp::OGLApp(const int argc, const char *argv[])
 #if defined(WIN32)
 	:Win32App(argc, argv)
+#elif defined(WEB)
+	:WebApp(argc, argv)
 #elif defined(LINUX)
 	:X11App(argc, argv)
 #elif defined(OSX)
@@ -253,7 +255,7 @@ void OGLApp::gfxAPIInit()
 
 #endif /*LINUX*/
 
-#if !defined(IOS) && !defined(MISC) /*&& !defined(OSX)*/
+#if !defined(IOS) && !defined(WEB) && !defined(MISC) /*&& !defined(OSX)*/
 
 	// Load linux GL 2.1 functions
 	FI::LOG("loading OpenGL procedures...");
@@ -458,7 +460,7 @@ void OGLApp::gfxAPIDeinit()
 	glXDestroyContext(m_display, m_glContext);
 #endif /*LINUX*/
 
-#if !defined(IOS) && !defined(ANDROID) && !defined(MISC) /*&& !defined(OSX) */
+#if !defined(IOS) && !defined(ANDROID) && !defined(WEB) && !defined(MISC) /*&& !defined(OSX) */
 	close_libgl();
 #endif
 }
