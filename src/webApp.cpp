@@ -41,7 +41,11 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 	m_height = height;
 	m_bFullscreen = fullscreen;
 
-	SDL_CreateWindowAndRenderer(m_width, m_height, 0, &mWindow, nullptr);
+	SDL_CreateWindowAndRenderer(m_width, m_height,
+		SDL_WINDOW_ALLOW_HIGHDPI,
+		&mWindow, nullptr);
+
+	SDL_GL_GetDrawableSize(mWindow, &m_width, &m_height);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -83,6 +87,8 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 void WebApp::destroyWindow()
 {
 	gfxAPIDeinit();
+
+	//TODO: cleanup SDL stuff
 }
 
 void WebApp::mainloop()
