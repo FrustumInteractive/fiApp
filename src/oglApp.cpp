@@ -422,8 +422,8 @@ void OGLApp::gfxAPIInit()
 	FI::LOG("OpenGL Platform Pixel Format ptr:", m_glPixelFormatObj);
 #endif
 
-	initScene();
-	m_bGfxAPIInitialized = true; // prevent drawing until init done
+	m_bGfxAPIInitialized = true; // prevent drawing until OS/driver init done
+	initScene(); // drawing shold still be allowed even if this user-side init isn't done. (ex. loading screens).
 }
 
 void OGLApp::gfxAPIDraw()
