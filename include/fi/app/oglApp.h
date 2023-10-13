@@ -63,11 +63,11 @@ public:
 	virtual void deinitScene() {};
 	virtual void drawScene() {};
 
-	void resize(int width, int height);
-
-	void gfxAPIInit();
-	void gfxAPIDraw();
-	void gfxAPIDeinit();
+	// Application overrides
+	void resize(int width, int height) override;
+	void gfxAPIInit() override;
+	void gfxAPIDraw() override;
+	void gfxAPIDeinit() override;
 
 	static int majorVersion();
 	static int minorVersion();

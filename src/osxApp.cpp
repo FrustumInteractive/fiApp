@@ -140,7 +140,6 @@ void OSXApp::mainloop()
 			if (CWGetKeyState(kc) == 1)
 			{
 				e.setType(FI::EVENT_KEY_PRESS);
-				
 			}
 			else
 			{
