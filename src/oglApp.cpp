@@ -430,7 +430,7 @@ void OGLApp::gfxAPIDraw()
 {
 	if (!m_bGfxAPIInitialized) return;
 	drawScene();
-	glFlush();
+	//glFlush();
 	m_bRenderRequested = false;
 }
 
