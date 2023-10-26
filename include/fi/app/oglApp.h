@@ -17,7 +17,12 @@
 #elif defined(WEB)
 	#include "webApp.h"
 	#define GL_GLEXT_PROTOTYPES 1
+#ifdef _GLES2
 	#include <SDL_opengles2.h>
+#else
+	#include <SDL_opengles2.h>
+	#include <GLES3/gl3.h>
+#endif /*_GLES2*/
 	class OGLApp : public WebApp
 #elif defined(LINUX)
 	#include "x11App.h"

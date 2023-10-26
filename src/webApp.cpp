@@ -41,16 +41,35 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 	m_height = height;
 	m_bFullscreen = fullscreen;
 
+	SDL_Init(SDL_INIT_VIDEO);
+
+#ifdef _GLES3
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#else
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
 	SDL_CreateWindowAndRenderer(m_width, m_height,
 		SDL_WINDOW_ALLOW_HIGHDPI,
 		&mWindow, nullptr);
 
+	SDL_GL_CreateContext(mWindow);
+
+	const GLubyte* glVersion = glGetString(GL_VERSION);
+	printf("GLVersion = %s\n", glVersion);
+	
+	const GLubyte* vendor = glGetString(GL_VENDOR);
+	const GLubyte* renderer = glGetString(GL_RENDERER);
+	printf("vendor = %s\nrenderer = %s\n", vendor, renderer);
+
 	SDL_GL_GetDrawableSize(mWindow, &m_width, &m_height);
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 /*	
 	// change working dir to where the exe is

@@ -12,7 +12,14 @@
 #include "app.h"
 
 #include <emscripten.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
+#ifdef _GLES3
+#include <GLES3/gl3.h>
+#endif
+
+#ifdef _GLES2
+#include <SDL_opengles2.h>
+#endif
 
 class WebApp : public Application
 {
