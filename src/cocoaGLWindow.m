@@ -151,7 +151,7 @@ static int exposure=0;
 
 - (void) flagsChanged: (NSEvent *)theEvent
 {
-	printf("flagschanged\n");
+	//printf("flagschanged\n");
 	unsigned int flags;
 	flags=[theEvent modifierFlags];
 

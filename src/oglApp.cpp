@@ -339,6 +339,15 @@ void OGLApp::gfxAPIInit()
 		// we're using a legacy context most likely
 		initGL21Funcs();
 
+	#if defined(_GLES2)
+		initGLES20Funcs();
+	#endif
+
+	#if defined(_GLES3)
+		initGLES20Funcs();
+		initGLES30Funcs();
+	#endif
+
 		const GLubyte* exts = glGetString(GL_EXTENSIONS);
 		if(exts)
 		{
@@ -358,42 +367,6 @@ void OGLApp::gfxAPIInit()
 				numExts++;
 			}
 			FI::LOG(" found", numExts, "GL extensions.");
-
-			// load procedures for specific extensions
-			// to get openGL ES 2  base functionality
-			if(fboSupport)
-			{
-				glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)getProcAddress("glIsRenderbuffer");
-				glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)getProcAddress("glDeleteRenderbuffers");
-				glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)getProcAddress("glGenRenderbuffers");
-				glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)getProcAddress("glBindRenderbuffer");
-
-				glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)getProcAddress("glRenderbufferStorage");
-
-				glRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)getProcAddress("glRenderbufferStorageMultisample");
-
-				glGetRenderbufferParameteriv = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)getProcAddress("glGetRenderbufferParameteriv");
-
-				glIsFramebuffer = (PFNGLISFRAMEBUFFERPROC)getProcAddress("glIsFramebuffer");
-				glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)getProcAddress("glBindFramebuffer");
-				glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)getProcAddress("glDeleteFramebuffers");
-				glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)getProcAddress("glGenFramebuffers");
-
-				glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)getProcAddress("glCheckFramebufferStatus");
-
-				glFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)getProcAddress("glFramebufferTexture1D");
-				glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)getProcAddress("glFramebufferTexture2D");
-				glFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)getProcAddress("glFramebufferTexture3D");
-				glFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)getProcAddress("glFramebufferTextureLayer");
-
-				glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)getProcAddress("glFramebufferRenderbuffer");
-
-				glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC) getProcAddress("glGetFramebufferAttachmentParameteriv");
-
-				glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)getProcAddress("glBlitFramebuffer");
-
-				glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)getProcAddress("glGenerateMipmap");
-			}
 		}
 		else
 		{
@@ -423,7 +396,7 @@ void OGLApp::gfxAPIInit()
 #endif
 
 	m_bGfxAPIInitialized = true; // prevent drawing until OS/driver init done
-	initScene(); // drawing shold still be allowed even if this user-side init isn't done. (ex. loading screens).
+	initScene(); // drawing should still be allowed even if this user-side init isn't done. (ex. loading screens).
 }
 
 void OGLApp::gfxAPIDraw()
