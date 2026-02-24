@@ -46,9 +46,15 @@ void OSXApp::createWindow(const char *title, int x, int y, int width, int height
 	}
 
 	CWOpenWindow(x, y, width, height, 0, &m_scaleFactor);
+#if FI_GFX_METAL
+    // For Metal/Vulkan, treat m_width/m_height as drawable pixel size.
+    // CWGetWindowSizeC returns drawable pixel size.
+    CWGetWindowSize(m_width, m_height);
+#else
 	cout << "content scale factor: " << m_scaleFactor << endl;
 	m_width = width*m_scaleFactor; // set render surface to be right backing size irrespective of 'DPI'
 	m_height = height*m_scaleFactor; // application->event coordinate normalization uses scale factor
+#endif
 
 	// get display res
 	CWGetScreenSize(m_screenWidth, m_screenHeight);

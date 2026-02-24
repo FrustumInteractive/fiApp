@@ -10,8 +10,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+
+#if FI_GFX_METAL
+#else
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#endif
 
 #include "fi/app/appDefines.h"
 
@@ -31,6 +35,15 @@ extern "C" void CWChangeToProgramDirC(void);
 extern "C" int CWCheckExposureC(void);
 extern "C" int CWCheckQuitMessageC(void);
 extern "C" void CWWarpMouseCursorPositionC(unsigned x, unsigned y);
+
+#if FI_GFX_METAL
+	extern "C" void* CWGetMetalLayerC(void);
+	extern "C" void* CWGetNativeViewC(void);
+
+	void* CWGetMetalLayer() { return CWGetMetalLayerC(); }
+	void* CWGetNativeView() { return CWGetNativeViewC(); }
+#endif
+
 
 
 void CWOpenWindow(int x0, int y0, int width, int height, int useDoubleBuffer, float *scaleFactor)
@@ -112,4 +125,3 @@ void CWWarpMouseCursorPosition(unsigned x, unsigned y)
 {
 	CWWarpMouseCursorPositionC(x, y);
 }
-

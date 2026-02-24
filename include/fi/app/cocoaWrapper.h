@@ -23,6 +23,12 @@ int      CWCheckWindowExposure(void);
 int      CWCheckQuitMessage(void);
 void     CWWarpMouseCursorPosition(unsigned x, unsigned y);
 
+#if FI_GFX_METAL
+void*    CWGetMetalLayer();
+void*    CWGetNativeView();
+#endif
+
+
 
 void     CWChangeToProgramDir(void); // Mainly for Mac OS X
 #endif /* __cplusplus */

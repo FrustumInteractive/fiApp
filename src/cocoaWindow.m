@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #include "fi/app/cocoaWrapper.h"
 #include "fi/app/cocoaKeyCodes.h"
@@ -16,8 +17,12 @@ static int mouseLb=0, mouseMb=0, mouseRb=0;
 
 static bool gQuitFlag = false;
 
-void* _glContext = 0;
-void* _glPixelFormat = 0;
+#if FI_GFX_METAL
+	static CAMetalLayer *cwMetalLayer = nil;
+#else
+	void* _glContext = 0;
+	void* _glPixelFormat = 0;
+#endif
 
 
 static eKeyCode CWMacUnicodeToKeyCode(int uni)
@@ -82,13 +87,23 @@ static int exposure=0;
 
 
 
-@interface CWOpenGLWindow : NSWindow
+@interface CWWindow : NSWindow
 {
 }
-
 @end
 
-@implementation CWOpenGLWindow
+#if FI_GFX_METAL
+	@interface CWView : NSView {}
+#else
+	@interface CWView : NSOpenGLView {}
+#endif
+- (void) drawRect: (NSRect) bounds;
+@end
+
+static CWWindow *cwWnd=nil;
+static CWView *cwView=nil;
+
+@implementation CWWindow
 
 - (id) initWithContentRect: (NSRect)rect
 				styleMask:(NSWindowStyleMask)wndStyle
@@ -119,6 +134,13 @@ static int exposure=0;
 
 - (void) windowDidResize: (NSNotification *)notification
 {
+#if FI_GFX_METAL
+	if (!cwView || !cwMetalLayer) return;
+	NSRect bounds = [cwView bounds];
+	CGFloat s = [[self screen] backingScaleFactor];
+	cwMetalLayer.contentsScale = s;
+	cwMetalLayer.drawableSize = CGSizeMake(bounds.size.width * s, bounds.size.height * s);
+#endif
 }
 
 - (void) windowWillClose: (NSNotification *)notification
@@ -130,13 +152,8 @@ static int exposure=0;
 @end
 
 
-@interface CWOpenGLView : NSOpenGLView 
-{
-}
-- (void) drawRect: (NSRect) bounds;
-@end
 
-@implementation CWOpenGLView
+@implementation CWView
 -(void) drawRect: (NSRect) bounds
 {
 	printf("%s\n",__FUNCTION__);
@@ -507,9 +524,6 @@ void CWTestApplicationPath(void)
  *
  ********************************************/
 
-static CWOpenGLWindow *cwWnd=nil;
-static CWOpenGLView *cwView=nil;
-
 void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *scaleFactor)
 {
 #ifndef ARC
@@ -532,13 +546,28 @@ void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *sca
 		NSWindowStyleMaskMiniaturizable|
 		NSWindowStyleMaskResizable;
 	
-	cwWnd=[CWOpenGLWindow alloc];
+	cwWnd=[CWWindow alloc];
 	[cwWnd
 		initWithContentRect:contRect
 		styleMask:winStyle
 		backing:NSBackingStoreBuffered 
 		defer:NO];
 
+#if FI_GFX_METAL
+	cwView = [CWView alloc];
+	contRect = NSMakeRect(0,0,wid,hei);
+	[cwView initWithFrame:contRect];
+
+	[cwView setWantsLayer:YES];
+	cwMetalLayer = [CAMetalLayer layer];
+	[cwView setLayer:cwMetalLayer];
+
+	CGFloat s = [[cwWnd screen] backingScaleFactor];
+	if (scaleFactor) *scaleFactor = (float)s;
+
+	cwMetalLayer.contentsScale = s;
+	cwMetalLayer.drawableSize = CGSizeMake(wid * s, hei * s);
+#else
 	NSOpenGLPixelFormat *format;
 	NSOpenGLPixelFormatAttribute formatAttrib[]=
 	{
@@ -551,15 +580,10 @@ void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *sca
 		0
 	};
 
-	if(useDoubleBuffer==0)
-	{
-	//	formatAttrib[2]=0;
-	}
-
 	format=[NSOpenGLPixelFormat alloc];
 	[format initWithAttributes: formatAttrib];
 	
-	cwView=[CWOpenGLView alloc];
+	cwView=[CWView alloc];
 	contRect=NSMakeRect(0,0,wid,hei);
 	[cwView	initWithFrame:contRect];
 	[cwView setPixelFormat:format];
@@ -572,6 +596,7 @@ void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *sca
 
 	_glContext = [[cwView openGLContext] CGLContextObj];
 	_glPixelFormat = [format CGLPixelFormatObj];
+#endif
 	
 	[cwWnd setContentView:cwView];
 	[cwWnd makeFirstResponder:cwView];
@@ -596,10 +621,16 @@ void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *sca
 
 void CWGetWindowSizeC(int *wid,int *hei)
 {
+#if FI_GFX_METAL
+	CGSize ds = cwMetalLayer.drawableSize; // pixels
+	*wid = (int)ds.width;
+	*hei = (int)ds.height;
+#else
 	NSRect rect;
 	rect=[cwView frame];
 	*wid=rect.size.width;
 	*hei=rect.size.height;
+#endif
 }
 
 void CWGetScreenSizeC(int *w, int *h)
@@ -739,8 +770,12 @@ int CWPassedTimeC(void)
 
 void CWSwapBufferC(void)
 {
+#if FI_GFX_METAL
+	// no-op for metal/vulkan
+#else
 	[[cwView openGLContext] makeCurrentContext];
 	[[cwView openGLContext] flushBuffer];
+#endif
 }
 
 eKeyCode CWInkeyC(void)
@@ -816,3 +851,8 @@ void CWWarpMouseCursorPositionC(unsigned x, unsigned y)
 	p.y = y;
 	CGWarpMouseCursorPosition(p);
 }
+
+#if FI_GFX_METAL
+void* CWGetMetalLayerC(void) { return (void*)cwMetalLayer; }
+void* CWGetNativeViewC(void) { return (void*)cwView; }
+#endif
