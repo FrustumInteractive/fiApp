@@ -82,7 +82,6 @@ void VulkanApp::gfxAPIInit()
 			createSwapchain();
 
 		createCommandPools();
-		createFrameSync();
 
 		initScene();
 	}
@@ -107,9 +106,7 @@ void VulkanApp::gfxAPIDraw()
 
 	if (m_presentEnabled)
 	{
-		// If frameIndex did not advance, app probably didn't call present().
-		// This will eventually deadlock on vkAcquireNextImageKHR.
-		if (m_frameIndex == m_frame.frameIndex)
+		if (!m_framePresented)
 		{
 			FI::LOG("WARNING: onVkFrame() did not present() or advance frame index; swapchain may stall.");
 		}
@@ -143,8 +140,7 @@ void VulkanApp::gfxAPIDeinit()
 	{
 	}
 
-	// Destroy sync/pools/swapchain/core
-	destroyFrameSync();
+	// Destroy pools/swapchain/core
 	destroyCommandPools();
 	destroySwapchain();
 
@@ -466,7 +462,6 @@ void VulkanApp::createSwapchain()
 		vkCheck(vkCreateImageView(m_device, &iv, nullptr, &m_swapchainImageViews[i]), "vkCreateImageView failed");
 	}
 
-	imagesInFlight.assign(m_swapchainImages.size(), VK_NULL_HANDLE);
 	m_swapchainRecreateRequested = false;
 }
 
@@ -487,7 +482,6 @@ void VulkanApp::destroySwapchain()
 	}
 
 	m_swapchainImages.clear();
-	imagesInFlight.clear();
 }
 
 void VulkanApp::recreateSwapchainIfNeeded()
@@ -537,37 +531,6 @@ void VulkanApp::destroyCommandPools()
 	}
 }
 
-void VulkanApp::createFrameSync()
-{
-	VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-	fci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-	VkSemaphoreCreateInfo sci{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-
-	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		vkCheck(vkCreateFence(m_device, &fci, nullptr, &m_inFlightFences[i]), "vkCreateFence failed");
-
-		if (m_presentEnabled)
-			vkCheck(vkCreateSemaphore(m_device, &sci, nullptr, &m_imageAvailable[i]), "vkCreateSemaphore imageAvailable failed");
-		else
-			m_imageAvailable[i] = VK_NULL_HANDLE;
-	}
-}
-
-void VulkanApp::destroyFrameSync()
-{
-	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		if (m_imageAvailable[i])
-			vkDestroySemaphore(m_device, m_imageAvailable[i], nullptr);
-		if (m_inFlightFences[i])
-			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-		m_imageAvailable[i] = VK_NULL_HANDLE;
-		m_inFlightFences[i] = VK_NULL_HANDLE;
-	}
-}
-
 // ----------------- Frame begin/end -----------------
 
 void VulkanApp::resetPerFramePools(uint32_t frameIndex)
@@ -578,51 +541,23 @@ void VulkanApp::resetPerFramePools(uint32_t frameIndex)
 	vkResetCommandPool(m_device, m_pools[frameIndex].transfer, 0);
 }
 
+void VulkanApp::resetCurrentFrameCommandPools()
+{
+	resetPerFramePools(m_frameIndex);
+}
+
 bool VulkanApp::beginFrame()
 {
 	recreateSwapchainIfNeeded();
 
 	const uint32_t f = m_frameIndex;
 
-	// CPU/GPU sync for per-frame resources
-	vkWaitForFences(m_device, 1, &m_inFlightFences[f], VK_TRUE, UINT64_MAX);
-	vkResetFences(m_device, 1, &m_inFlightFences[f]);
-
-	resetPerFramePools(f);
-
+	m_framePresented = false;
 	m_frame = {};
 	m_frame.frameIndex = f;
 	m_frame.presenting = m_presentEnabled;
 	m_frame.device = m_device;
 	m_frame.queues = m_queues;
-	m_frame.frameFence = m_inFlightFences[f];
-	m_frame.imageAvailable = m_presentEnabled ? m_imageAvailable[f] : VK_NULL_HANDLE;
-
-	if (!m_presentEnabled)
-		return true;
-
-	uint32_t imageIndex = 0;
-	VkResult ar = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAvailable[f], VK_NULL_HANDLE, &imageIndex);
-
-	if (ar == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		requestSwapchainRecreate();
-		return false;
-	}
-	if (ar != VK_SUCCESS && ar != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error("vkAcquireNextImageKHR failed");
-	}
-
-	// If this swapchain image is already in flight, wait for its fence
-	if (imagesInFlight.size() == m_swapchainImages.size() && imagesInFlight[imageIndex] != VK_NULL_HANDLE)
-	{
-		vkWaitForFences(m_device, 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
-	}
-	if (imagesInFlight.size() == m_swapchainImages.size())
-		imagesInFlight[imageIndex] = m_inFlightFences[f];
-
-	m_frame.imageIndex = imageIndex;
 	return true;
 }
 
@@ -653,7 +588,15 @@ void VulkanApp::present(const std::vector<VkSemaphore> &waitSemaphores)
 		requestSwapchainRecreate();
 	}
 
-	// IMPORTANT: frame progress happens here for presenting apps.
+	notifyFramePresented();
+}
+
+void VulkanApp::notifyFramePresented()
+{
+	if (m_framePresented)
+		return;
+
+	m_framePresented = true;
 	m_frameIndex = (m_frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 

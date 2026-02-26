@@ -111,9 +111,7 @@ public:
 		uint32_t frameIndex = 0; // 0..MAX_FRAMES_IN_FLIGHT-1
 		bool presenting = false;
 
-		uint32_t imageIndex = 0;					 // valid only if presenting
-		VkSemaphore imageAvailable = VK_NULL_HANDLE; // valid only if presenting
-		VkFence frameFence = VK_NULL_HANDLE;
+		uint32_t imageIndex = 0;					 // set by derived app/renderer before present()
 
 		// convenience
 		VkDevice device = VK_NULL_HANDLE;
@@ -121,6 +119,10 @@ public:
 	};
 
 	const FrameContext &frame() const { return m_frame; }
+
+	uint32_t maxFramesInFlight() const { return MAX_FRAMES_IN_FLIGHT; }
+	void resetCurrentFrameCommandPools();
+	void setCurrentSwapchainImageIndex(uint32_t imageIndex) { m_frame.imageIndex = imageIndex; }
 
 	// ---- Command buffer helpers ----
 	// Allocate one-time command buffer from a given pool (graphics/compute/transfer).
@@ -150,6 +152,10 @@ public:
 	// If presentEnabled==false this is a no-op.
 	void present(const std::vector<VkSemaphore> &waitSemaphores);
 
+	// Marks the current frame as presented and advances frame-in-flight index.
+	// Use this when presentation is performed externally (e.g. by a renderer abstraction).
+	void notifyFramePresented();
+
 protected:
 	// Derived apps can call these if they want manual control, but normally you just implement onVkFrame().
 	bool beginFrame();											// acquires image if presenting; sets m_frame fields; returns false on out-of-date
@@ -172,8 +178,6 @@ private:
 	void createCommandPools();
 	void destroyCommandPools();
 
-	void createFrameSync();
-	void destroyFrameSync();
 
 	// ---- helpers ----
 	uint32_t findQueueFamily(VkQueueFlags required, VkQueueFlags excluded = 0) const;
@@ -202,7 +206,7 @@ private:
 	std::vector<VkImageView> m_swapchainImageViews;
 
 	// Per-frame command pools (one pool per queue type per frame)
-	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2; // can make 3 later
+	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3; // default triple buffering for smoother pacing
 	struct PerFramePools
 	{
 		VkCommandPool graphics = VK_NULL_HANDLE;
@@ -211,12 +215,8 @@ private:
 	};
 	std::array<PerFramePools, MAX_FRAMES_IN_FLIGHT> m_pools{};
 
-	// Per-frame sync
-	std::array<VkFence, MAX_FRAMES_IN_FLIGHT> m_inFlightFences{};
-	std::array<VkSemaphore, MAX_FRAMES_IN_FLIGHT> m_imageAvailable{};
-	std::vector<VkFence> imagesInFlight; // per swapchain image fence
-
 	uint32_t m_frameIndex = 0;
+	bool m_framePresented = false;
 	FrameContext m_frame{};
 };
 

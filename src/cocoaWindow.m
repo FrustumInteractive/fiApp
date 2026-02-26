@@ -17,11 +17,11 @@ static int mouseLb=0, mouseMb=0, mouseRb=0;
 
 static bool gQuitFlag = false;
 
+void* _glContext = 0;
+void* _glPixelFormat = 0;
+
 #if FI_GFX_METAL
 	static CAMetalLayer *cwMetalLayer = nil;
-#else
-	void* _glContext = 0;
-	void* _glPixelFormat = 0;
 #endif
 
 

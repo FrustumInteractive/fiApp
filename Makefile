@@ -10,7 +10,6 @@ C_FILES=
 CXX_FILES=\
 	application.cpp \
 	oglApp.cpp \
-	vulkanApp.cpp \
 	console.cpp \
 	fileIO.cpp \
 	json.cpp \
@@ -19,6 +18,11 @@ CXX_FILES=\
 
 #OBJC_FILES=
 #OBJCXX_FILES=
+
+ifneq ($(findstring FI_GFX_VULKAN,$(EXTRACXXFLAGS)),)
+CXX_FILES += \
+	vulkanApp.cpp
+endif
 
 C_FILES_LINUX=\
 	gl/glProcs.c
