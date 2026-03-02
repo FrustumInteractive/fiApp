@@ -19,6 +19,7 @@ enum eEventType
 	EVENT_FADE_IN,
 	EVENT_FADE_OUT,
 	EVENT_MOUSE_MOVE,
+	EVENT_MOUSE_WHEEL,
 	EVENT_MOUSE_LEFT_CLICK,
 	EVENT_MOUSE_LEFT_RELEASE,
 	EVENT_MOUSE_LEFT_DRAG,
@@ -122,6 +123,9 @@ public:
 	virtual void onMiddleDrag(FI::Event e){}
 	virtual void onHover(FI::Event e){}
 	virtual void onValueChange(FI::Event e){}
+
+	// Added at end to preserve vtable order for existing callbacks.
+	virtual void onMouseWheel(FI::Event e){}
 
 private:
 

@@ -69,6 +69,8 @@ PFNGLGENTEXTURESPROC glGenTextures;
 PFNGLCULLFACEPROC glCullFace;
 PFNGLFRONTFACEPROC glFrontFace;
 PFNGLBLENDFUNCPROC glBlendFunc;
+PFNGLDEPTHFUNCPROC glDepthFunc;
+PFNGLDEPTHMASKPROC glDepthMask;
 
 PFNGLREADPIXELSPROC glReadPixels;
 PFNGLPIXELSTOREIPROC glPixelStorei;
@@ -362,6 +364,8 @@ void initGL10Funcs()
 	glCullFace = (PFNGLCULLFACEPROC)getProcAddress("glCullFace");
 	glFrontFace = (PFNGLFRONTFACEPROC)getProcAddress("glFrontFace");
 	glBlendFunc = (PFNGLBLENDFUNCPROC)getProcAddress("glBlendFunc");
+	glDepthFunc = (PFNGLDEPTHFUNCPROC)getProcAddress("glDepthFunc");
+	glDepthMask = (PFNGLDEPTHMASKPROC)getProcAddress("glDepthMask");
 	
 	glReadPixels = (PFNGLREADPIXELSPROC)getProcAddress("glReadPixels");
 	glPixelStorei = (PFNGLPIXELSTOREIPROC)getProcAddress("glPixelStorei");

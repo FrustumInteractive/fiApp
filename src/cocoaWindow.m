@@ -453,6 +453,19 @@ static CWView *cwView=nil;
 	}
 }
 
+- (void) scrollWheel:(NSEvent *)theEvent
+{
+	CGFloat dy = [theEvent scrollingDeltaY];
+	if (dy > 0.0)
+	{
+		if (nKeyBufUsed < NKEYBUF) keyBuffer[nKeyBufUsed++] = KEY_WHEELUP;
+	}
+	else if (dy < 0.0)
+	{
+		if (nKeyBufUsed < NKEYBUF) keyBuffer[nKeyBufUsed++] = KEY_WHEELDOWN;
+	}
+}
+
 /*
 - (BOOL)acceptsFirstResponder
 {

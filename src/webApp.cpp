@@ -120,6 +120,113 @@ void WebApp::destroyWindow()
 
 void WebApp::mainloop()
 {
+	SDL_Event ev;
+	while (SDL_PollEvent(&ev))
+	{
+		FI::Event e;
+		switch (ev.type)
+		{
+			case SDL_MOUSEBUTTONDOWN:
+			{
+				if (ev.button.button == SDL_BUTTON_LEFT)
+				{
+					m_leftBtnDown = true;
+					e.setType(FI::EVENT_MOUSE_LEFT_CLICK);
+				}
+				else if (ev.button.button == SDL_BUTTON_MIDDLE)
+				{
+					m_middleBtnDown = true;
+					e.setType(FI::EVENT_MOUSE_MIDDLE_CLICK);
+				}
+				else if (ev.button.button == SDL_BUTTON_RIGHT)
+				{
+					m_rightBtnDown = true;
+					e.setType(FI::EVENT_MOUSE_RIGHT_CLICK);
+				}
+				else
+				{
+					break;
+				}
+				e.setData((float)ev.button.x, (float)ev.button.y);
+				setEvent(e);
+				break;
+			}
+
+			case SDL_MOUSEBUTTONUP:
+			{
+				if (ev.button.button == SDL_BUTTON_LEFT)
+				{
+					m_leftBtnDown = false;
+					e.setType(FI::EVENT_MOUSE_LEFT_RELEASE);
+				}
+				else if (ev.button.button == SDL_BUTTON_MIDDLE)
+				{
+					m_middleBtnDown = false;
+					e.setType(FI::EVENT_MOUSE_MIDDLE_RELEASE);
+				}
+				else if (ev.button.button == SDL_BUTTON_RIGHT)
+				{
+					m_rightBtnDown = false;
+					e.setType(FI::EVENT_MOUSE_RIGHT_RELEASE);
+				}
+				else
+				{
+					break;
+				}
+				e.setData((float)ev.button.x, (float)ev.button.y);
+				setEvent(e);
+				break;
+			}
+
+			case SDL_MOUSEMOTION:
+			{
+				if (m_leftBtnDown)
+				{
+					e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
+				}
+				else if (m_middleBtnDown)
+				{
+					e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
+				}
+				else if (m_rightBtnDown)
+				{
+					e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
+				}
+				else
+				{
+					e.setType(FI::EVENT_MOUSE_MOVE);
+				}
+				e.setData((float)ev.motion.x, (float)ev.motion.y);
+				setEvent(e);
+				break;
+			}
+
+			case SDL_MOUSEWHEEL:
+			{
+				// Positive y means wheel up; match native path semantics (+1 up, -1 down).
+				float wheelDelta = (float)ev.wheel.y;
+				if (ev.wheel.direction == SDL_MOUSEWHEEL_FLIPPED)
+				{
+					wheelDelta = -wheelDelta;
+				}
+				if (wheelDelta != 0.0f)
+				{
+					e.setType(FI::EVENT_MOUSE_WHEEL);
+					e.setData(wheelDelta, 0.0f);
+					setEvent(e);
+				}
+				break;
+			}
+
+			case SDL_QUIT:
+				m_bQuit = true;
+				break;
+
+			default:
+				break;
+		}
+	}
+
 	gfxAPIDraw(); // our draw call
 #if !defined(FI_GFX_WEBGPU)
 	swapBuffers();

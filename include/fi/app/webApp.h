@@ -47,7 +47,10 @@ public:
 protected:
 	void swapBuffers();
 
-	SDL_Window *mWindow;
+	SDL_Window *mWindow = nullptr;
+	bool m_leftBtnDown = false;
+	bool m_middleBtnDown = false;
+	bool m_rightBtnDown = false;
 
 #if defined(FI_GFX_WEBGPU)
 	WGPUDevice m_wgpuDevice = nullptr;

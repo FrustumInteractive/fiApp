@@ -70,6 +70,7 @@ void OSXApp::destroyWindow()
 void OSXApp::mainloop()
 {
 	bool bLeftBtnDown = false;
+	bool bMiddleBtnDown = false;
 	bool bRightBtnDown = false;
 
 	while(!m_bQuit) 
@@ -114,15 +115,28 @@ void OSXApp::mainloop()
 				break;
 
 			case MOUSEEVENT_MBUTTONDOWN:
-				//e.setType(FI::EVENT_MOUSE_MIDDLE_RELEASE);
-				//e.setData((float)mx, (float)my);
-				//setEvent(e);
+			e.setType(FI::EVENT_MOUSE_MIDDLE_CLICK);
+			e.setData((float)mx, (float)my);
+			setEvent(e);
+			bMiddleBtnDown = true;
+			break;
+
+			case MOUSEEVENT_MBUTTONUP:
+				e.setType(FI::EVENT_MOUSE_MIDDLE_RELEASE);
+				e.setData((float)mx, (float)my);
+				setEvent(e);
+				bMiddleBtnDown = false;
 				break;
 
 			case MOUSEEVENT_MOVE:
 				if (bLeftBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
+					e.setData((float)mx, (float)my);
+				}
+				else if (bMiddleBtnDown)
+				{
+					e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
 					e.setData((float)mx, (float)my);
 				}
 				else if (bRightBtnDown)
@@ -143,15 +157,24 @@ void OSXApp::mainloop()
 
 		if (eKeyCode kc = CWInkey())
 		{
-			if (CWGetKeyState(kc) == 1)
+			if (kc == KEY_WHEELUP || kc == KEY_WHEELDOWN)
 			{
-				e.setType(FI::EVENT_KEY_PRESS);
+				e.setType(FI::EVENT_MOUSE_WHEEL);
+				const float wheelDelta = (kc == KEY_WHEELUP) ? 1.0f : -1.0f;
+				e.setData(wheelDelta, 0.0f);
 			}
 			else
 			{
-				e.setType(FI::EVENT_KEY_RELEASE);
+				if (CWGetKeyState(kc) == 1)
+				{
+					e.setType(FI::EVENT_KEY_PRESS);
+				}
+				else
+				{
+					e.setType(FI::EVENT_KEY_RELEASE);
+				}
+				e.setData((unsigned int)kc, 0);
 			}
-			e.setData((unsigned int)kc, 0);
 			setEvent(e);
 		}
 

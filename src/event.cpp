@@ -63,6 +63,15 @@ void EventListener::notify(FI::Event e)
 			case EVENT_MOUSE_LEFT_RELEASE:
 				m_eventListeners[i]->onMouseLeftRelease(e);
 				break;
+			case EVENT_MOUSE_MIDDLE_CLICK:
+				m_eventListeners[i]->onMouseMiddleClick(e);
+				break;
+			case EVENT_MOUSE_MIDDLE_DRAG:
+				m_eventListeners[i]->onMouseMiddleDrag(e);
+				break;
+			case EVENT_MOUSE_MIDDLE_RELEASE:
+				m_eventListeners[i]->onMouseMiddleRelease(e);
+				break;
 			case EVENT_MOUSE_RIGHT_CLICK:
 				m_eventListeners[i]->onMouseRightClick(e);
 				break;
@@ -74,6 +83,9 @@ void EventListener::notify(FI::Event e)
 				break;
 			case EVENT_MOUSE_MOVE:
 				m_eventListeners[i]->onMouseMove(e);
+				break;
+			case EVENT_MOUSE_WHEEL:
+				m_eventListeners[i]->onMouseWheel(e);
 				break;
 			case EVENT_HIDE:
 				m_eventListeners[i]->onHide(e);
