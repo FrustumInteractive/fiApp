@@ -2,6 +2,10 @@
 #include "shader.h"
 #include <string>
 
+#if defined(WEB)
+#include <SDL_opengles2_gl2ext.h>
+#endif
+
 // - Util -
 void checkError(const char* str, const char* str2 = nullptr, bool consume = false)
 {
@@ -134,7 +138,10 @@ void MyApp::initScene()
 	};
 
 	// create VAO
-#if defined(IOS) || defined(WEB)
+#if defined(WEB)
+	// Web path does not require a VAO for this test; attributes are set each draw.
+	m_vertexArrayObject = 0;
+#elif defined(IOS)
 	glGenVertexArraysOES(1, &m_vertexArrayObject);
 	glBindVertexArrayOES(m_vertexArrayObject);
 #else

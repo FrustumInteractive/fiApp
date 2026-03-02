@@ -13,12 +13,24 @@
 
 #include <emscripten.h>
 #include <SDL2/SDL.h>
+
+#if defined(FI_GFX_WEBGPU)
+#include <webgpu/webgpu.h>
+#if __has_include(<emscripten/html5_webgpu.h>)
+#include <emscripten/html5_webgpu.h>
+#else
+extern "C" WGPUDevice emscripten_webgpu_get_device(void);
+#endif
+#endif
+
+#if !defined(FI_GFX_WEBGPU)
 #ifdef _GLES3
 #include <GLES3/gl3.h>
 #endif
 
 #ifdef _GLES2
 #include <SDL_opengles2.h>
+#endif
 #endif
 
 class WebApp : public Application
@@ -36,6 +48,10 @@ protected:
 	void swapBuffers();
 
 	SDL_Window *mWindow;
+
+#if defined(FI_GFX_WEBGPU)
+	WGPUDevice m_wgpuDevice = nullptr;
+#endif
 };
 
 #endif /*_WEBAPP_H*/

@@ -52,6 +52,22 @@ TARGET=libfiApp.a
 CLEAN_TARGET=$(TARGET)
 RESOURCES=
 
+ifdef WEB
+ifneq ($(findstring FI_GFX_WEBGPU,$(EXTRACXXFLAGS)),)
+# Drop any externally-passed WebGL-only linker flags from compile flags.
+override EXTRACXXFLAGS := $(filter-out -sMIN_WEBGL_VERSION=% -sMAX_WEBGL_VERSION=% -sFULL_ES3 -sFULL_ES2,$(EXTRACXXFLAGS))
+EMSCRIPTEN_GFX_FLAGS += --use-port=emdawnwebgpu
+# Template makefiles force -D_GLES2 for WEB; cancel it for WebGPU builds.
+CXXFLAGS_WEB += -U_GLES2
+# WebGPU builds should not compile GL app wrappers.
+CXX_FILES := $(filter-out oglApp.cpp,$(CXX_FILES))
+override EXTRACXXFLAGS += $(EMSCRIPTEN_GFX_FLAGS)
+endif
+
+EMSCRIPTEN_GFX_FLAGS += -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES3 -sFULL_ES2
+LIBS_WEB += $(EMSCRIPTEN_GFX_FLAGS)
+endif
+
 ### Specify project dependencies here
 DEP_WIN32=
 DEP_OSX=

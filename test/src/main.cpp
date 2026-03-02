@@ -4,7 +4,11 @@
  *												*
  ************************************************/
 
+#if defined(FI_GFX_WEBGPU)
+#include "app_wgpu.h"
+#else
 #include "app.h"
+#endif
 
 int main( const int argc, const char *argv[] )
 {
