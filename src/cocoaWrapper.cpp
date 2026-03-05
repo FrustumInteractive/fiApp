@@ -35,6 +35,7 @@ extern "C" void CWChangeToProgramDirC(void);
 extern "C" int CWCheckExposureC(void);
 extern "C" int CWCheckQuitMessageC(void);
 extern "C" void CWWarpMouseCursorPositionC(unsigned x, unsigned y);
+extern "C" void CWSetVSyncC(int enabled);
 
 #if FI_GFX_METAL
 	extern "C" void* CWGetMetalLayerC(void);
@@ -124,4 +125,9 @@ void CWChangeToProgramDir(void)
 void CWWarpMouseCursorPosition(unsigned x, unsigned y)
 {
 	CWWarpMouseCursorPositionC(x, y);
+}
+
+void CWSetVSync(bool enabled)
+{
+	CWSetVSyncC(enabled ? 1 : 0);
 }

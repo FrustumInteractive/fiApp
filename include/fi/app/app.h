@@ -34,6 +34,7 @@ public:
 	std::vector<std::string> filesInDirectory( std::string dirPath, std::string ext);
 	bool renderOnRefreshEnabled(){ return m_bRenderOnRefresh; }
 	bool isRenderRequested(){ return m_bRenderRequested;}
+	bool vsyncEnabled() const { return m_bVsyncEnabled; }
 
 	// setters
 	void setExecutiblePath( std::string path ){ m_executiblePath = path;}
@@ -42,6 +43,7 @@ public:
 	void setRenderOnRefresh(bool b){ m_bRenderOnRefresh = b;}
 	void setDisplayUpdateTimeInterval(float t){m_timeToNextDisplayUpdate = t;}
 	void setInputUpdateTimeInterval(float t){m_timeToNextInputUpdate = t;}
+	void setVsyncEnabled(bool enabled){ m_bVsyncEnabled = enabled; }
 
 	// windows creation
 	virtual void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen)=0;
@@ -82,7 +84,8 @@ protected:
 		m_bQuit = false,
 		m_bRenderOnRefresh = true,
 		m_bRenderRequested = false,
-		m_bGfxAPIInitialized = false;
+		m_bGfxAPIInitialized = false,
+		m_bVsyncEnabled = true;
 
 	float
 		m_scaleFactor = 1,

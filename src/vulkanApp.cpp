@@ -407,9 +407,21 @@ void VulkanApp::createSwapchain()
 	vkGetPhysicalDeviceSurfacePresentModesKHR(m_phys, m_surface, &pmCount, pms.data());
 
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-	for (auto m : pms)
-		if (m == VK_PRESENT_MODE_MAILBOX_KHR)
-			presentMode = m;
+	if (!m_bVsyncEnabled)
+	{
+		for (auto m : pms)
+		{
+			if (m == VK_PRESENT_MODE_MAILBOX_KHR)
+			{
+				presentMode = m;
+				break;
+			}
+			if (m == VK_PRESENT_MODE_IMMEDIATE_KHR)
+			{
+				presentMode = m;
+			}
+		}
+	}
 
 	uint32_t imageCount = caps.minImageCount + 1;
 	if (caps.maxImageCount > 0 && imageCount > caps.maxImageCount)

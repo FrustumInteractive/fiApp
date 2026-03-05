@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <chrono>
 
 #include "fi/app/osxApp.h"
 
@@ -46,6 +47,10 @@ void OSXApp::createWindow(const char *title, int x, int y, int width, int height
 	}
 
 	CWOpenWindow(x, y, width, height, 0, &m_scaleFactor);
+#if !FI_GFX_METAL
+	CWSetVSync(m_bVsyncEnabled);
+	FI::LOG("OSXApp OpenGL vsync:", m_bVsyncEnabled ? "enabled" : "disabled");
+#endif
 #if FI_GFX_METAL
     // For Metal/Vulkan, treat m_width/m_height as drawable pixel size.
     // CWGetWindowSizeC returns drawable pixel size.
@@ -72,6 +77,13 @@ void OSXApp::mainloop()
 	bool bLeftBtnDown = false;
 	bool bMiddleBtnDown = false;
 	bool bRightBtnDown = false;
+#if !FI_GFX_METAL
+	using Clock = std::chrono::steady_clock;
+	auto swapWindowStart = Clock::now();
+	double swapWindowSeconds = 0.0;
+	double swapBlockSeconds = 0.0;
+	unsigned int swapFrames = 0;
+#endif
 
 	while(!m_bQuit) 
 	{
@@ -178,10 +190,30 @@ void OSXApp::mainloop()
 			setEvent(e);
 		}
 
-		gfxAPIDraw();		// our draw call
-		CWSwapBuffers();
-		//CWSleep(17);
-	}
+			gfxAPIDraw();		// our draw call
+#if !FI_GFX_METAL
+			auto swapBegin = Clock::now();
+#endif
+			CWSwapBuffers();
+#if !FI_GFX_METAL
+			auto swapEnd = Clock::now();
+			swapFrames++;
+			swapBlockSeconds += std::chrono::duration<double>(swapEnd - swapBegin).count();
+			swapWindowSeconds = std::chrono::duration<double>(swapEnd - swapWindowStart).count();
+
+			if (swapWindowSeconds >= 5.0 && swapFrames > 0)
+			{
+				double swapFps = (double)swapFrames / swapWindowSeconds;
+				double avgSwapBlockMs = (swapBlockSeconds / (double)swapFrames) * 1000.0;
+				FI::LOG("swap fps avg (", swapWindowSeconds, "s):", swapFps, " avg swap block (ms):", avgSwapBlockMs);
+				swapWindowStart = swapEnd;
+				swapWindowSeconds = 0.0;
+				swapBlockSeconds = 0.0;
+				swapFrames = 0;
+			}
+#endif
+			//CWSleep(17);
+		}
 }
 
 void OSXApp::warpMouseCursorPosition(unsigned x, unsigned y)

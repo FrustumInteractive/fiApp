@@ -22,6 +22,7 @@ int      CWGetKeyState(eKeyCode);
 int      CWCheckWindowExposure(void);
 int      CWCheckQuitMessage(void);
 void     CWWarpMouseCursorPosition(unsigned x, unsigned y);
+void     CWSetVSync(bool enabled);
 
 #if FI_GFX_METAL
 void*    CWGetMetalLayer();

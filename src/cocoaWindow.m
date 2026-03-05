@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <QuartzCore/CAMetalLayer.h>
+#include <dlfcn.h>
 
 #include "fi/app/cocoaWrapper.h"
 #include "fi/app/cocoaKeyCodes.h"
@@ -16,6 +17,32 @@
 static int mouseLb=0, mouseMb=0, mouseRb=0;
 
 static bool gQuitFlag = false;
+static bool gSwapFinishConfigured = false;
+static bool gForceFinishBeforeSwap = false;
+static bool gGLFinishResolved = false;
+static bool gGLFinishAvailable = false;
+typedef void (*CWGLFinishProc)(void);
+static CWGLFinishProc gGLFinish = 0;
+
+static void CWResolveGLFinishIfNeeded(void)
+{
+	if (gGLFinishResolved)
+	{
+		return;
+	}
+
+	gGLFinishResolved = true;
+#if FI_GFX_METAL
+	gGLFinishAvailable = false;
+#else
+	void *ogl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_LOCAL);
+	if (ogl)
+	{
+		gGLFinish = (CWGLFinishProc)dlsym(ogl, "glFinish");
+		gGLFinishAvailable = (gGLFinish != 0);
+	}
+#endif
+}
 
 void* _glContext = 0;
 void* _glPixelFormat = 0;
@@ -61,7 +88,7 @@ static struct CWMouseEventLog mosBuffer[NKEYBUF];
 static int exposure=0;
 
 
-@interface CWMacDelegate : NSObject  /*< NSApplicationDelegate > */
+@interface CWMacDelegate : NSObject <NSApplicationDelegate>
 /* Example: Fire has the same problem no explanation */
 {
 }
@@ -653,7 +680,7 @@ void CWGetScreenSizeC(int *w, int *h)
 	unsigned screenCount = [screenArray count];
 	unsigned index  = 0;
 
-	for (index; index < screenCount; index++)
+	for (; index < screenCount; index++)
 	{
 		NSScreen *screen = [screenArray objectAtIndex: index];
 		screenRect = [screen visibleFrame];
@@ -786,8 +813,67 @@ void CWSwapBufferC(void)
 #if FI_GFX_METAL
 	// no-op for metal/vulkan
 #else
+	if (!gSwapFinishConfigured)
+	{
+		const char* e = getenv("FI_GL_SWAP_FORCE_FINISH");
+		gForceFinishBeforeSwap = (e && atoi(e) != 0);
+		gSwapFinishConfigured = true;
+		printf("OpenGL swap diagnostics: FI_GL_SWAP_FORCE_FINISH=%s (%s)\n",
+			e ? e : "unset",
+			gForceFinishBeforeSwap ? "enabled" : "disabled");
+	}
+
 	[[cwView openGLContext] makeCurrentContext];
+	if (gForceFinishBeforeSwap)
+	{
+		CWResolveGLFinishIfNeeded();
+		if (gGLFinishAvailable)
+		{
+			gGLFinish();
+		}
+		else
+		{
+			static bool once = false;
+			if (!once)
+			{
+				once = true;
+				printf("OpenGL swap diagnostics: glFinish unavailable; skipping forced finish\n");
+			}
+		}
+	}
 	[[cwView openGLContext] flushBuffer];
+#endif
+}
+
+void CWSetVSyncC(int enabled)
+{
+#if FI_GFX_METAL
+	(void)enabled;
+#else
+	[[cwView openGLContext] makeCurrentContext];
+	GLint swapInterval = enabled ? 1 : 0;
+	[[cwView openGLContext] setValues:&swapInterval forParameter:NSOpenGLContextParameterSwapInterval];
+
+	GLint readback = -1;
+	[[cwView openGLContext] getValues:&readback forParameter:NSOpenGLContextParameterSwapInterval];
+
+	double hz = 0.0;
+	if (cwWnd)
+	{
+		NSScreen *screen = [cwWnd screen];
+		NSNumber *screenNum = [[screen deviceDescription] objectForKey:@"NSScreenNumber"];
+		if (screenNum)
+		{
+			CGDisplayModeRef mode = CGDisplayCopyDisplayMode((CGDirectDisplayID)[screenNum unsignedIntValue]);
+			if (mode)
+			{
+				hz = CGDisplayModeGetRefreshRate(mode);
+				CGDisplayModeRelease(mode);
+			}
+		}
+	}
+
+	printf("OpenGL vsync set request=%d readback=%d display_refresh=%.3fHz\n", enabled ? 1 : 0, (int)readback, hz);
 #endif
 }
 
