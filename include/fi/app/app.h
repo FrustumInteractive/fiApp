@@ -35,6 +35,7 @@ public:
 	bool renderOnRefreshEnabled(){ return m_bRenderOnRefresh; }
 	bool isRenderRequested(){ return m_bRenderRequested;}
 	bool vsyncEnabled() const { return m_bVsyncEnabled; }
+	float scaleFactor() const { return m_scaleFactor; }
 
 	// setters
 	void setExecutiblePath( std::string path ){ m_executiblePath = path;}

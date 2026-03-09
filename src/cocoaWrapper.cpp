@@ -17,12 +17,14 @@
 #include <OpenGL/glu.h>
 #endif
 
-#include "fi/app/appDefines.h"
+#include "fi/app/cocoaWrapper.h"
 
 extern "C" void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *scaleFactor);
 extern "C" void CWGetWindowSizeC(int *wid,int *hei);
+extern "C" int CWConsumeResizeEventC(int *wid,int *hei);
 extern "C" void CWGetScreenSizeC(int *w, int *h);
 extern "C" void CWPollDeviceC(void);
+extern "C" void CWSetLiveResizeDrawCallbackC(CWLiveResizeDrawCallback cb);
 extern "C" void CWSleepC(int ms);
 extern "C" int CWPassedTimeC(void);
 extern "C" void CWMouseC(int *lb,int *mb,int *rb,int *mx,int *my);
@@ -32,7 +34,6 @@ extern "C" eKeyCode CWInkeyC(void);
 extern "C" char CWInkeyCharC(void);
 extern "C" int CWKeyStateC(eKeyCode kc);
 extern "C" void CWChangeToProgramDirC(void);
-extern "C" int CWCheckExposureC(void);
 extern "C" int CWCheckQuitMessageC(void);
 extern "C" void CWWarpMouseCursorPositionC(unsigned x, unsigned y);
 extern "C" void CWSetVSyncC(int enabled);
@@ -57,6 +58,11 @@ void CWGetWindowSize(int &width,int &height)
 	CWGetWindowSizeC(&width, &height);
 }
 
+int CWConsumeResizeEvent(int *width, int *height)
+{
+	return CWConsumeResizeEventC(width, height);
+}
+
 void CWGetScreenSize(int &w, int &h)
 {
 	CWGetScreenSizeC(&w, &h);
@@ -65,6 +71,11 @@ void CWGetScreenSize(int &w, int &h)
 void CWPollDevice(void)
 {
 	CWPollDeviceC();
+}
+
+void CWSetLiveResizeDrawCallback(CWLiveResizeDrawCallback cb)
+{
+	CWSetLiveResizeDrawCallbackC(cb);
 }
 
 void CWSleep(int ms)
@@ -105,11 +116,6 @@ char CWInkeyChar(void)
 int CWGetKeyState(eKeyCode kc)
 {
 	return CWKeyStateC(kc);
-}
-
-int CWCheckWindowExposure(void)
-{
-	return CWCheckExposureC();
 }
 
 int CWCheckQuitMessage(void)

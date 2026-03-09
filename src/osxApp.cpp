@@ -11,6 +11,75 @@
 
 using namespace std;
 
+static OSXApp *sLiveResizeApp = nullptr;
+static int sLastAppliedResizeW = -1;
+static int sLastAppliedResizeH = -1;
+
+static bool OSXGetLatestWindowSize(int &winW, int &winH)
+{
+	bool sawResize = false;
+	winW = 0;
+	winH = 0;
+	while (CWConsumeResizeEvent(&winW, &winH))
+	{
+		sawResize = true;
+	}
+	if (!sawResize)
+	{
+		// Fallback: poll in case notification/coalescing misses a tick.
+		CWGetWindowSize(winW, winH);
+	}
+	return sawResize;
+}
+
+static bool OSXApplyResizeIfNeeded(OSXApp *app, bool onlyIfChanged)
+{
+	if (app == nullptr)
+	{
+		return false;
+	}
+
+	int winW = 0;
+	int winH = 0;
+	OSXGetLatestWindowSize(winW, winH);
+
+#if FI_GFX_METAL
+	const int drawW = winW;
+	const int drawH = winH;
+#else
+	const float sf = app->scaleFactor();
+	const int drawW = (int)(winW * sf);
+	const int drawH = (int)(winH * sf);
+#endif
+
+	if (drawW <= 0 || drawH <= 0)
+	{
+		return false;
+	}
+
+	if (onlyIfChanged && drawW == sLastAppliedResizeW && drawH == sLastAppliedResizeH)
+	{
+		return false;
+	}
+
+	sLastAppliedResizeW = drawW;
+	sLastAppliedResizeH = drawH;
+	app->resize(drawW, drawH);
+	return true;
+}
+
+static void OSXLiveResizeDrawCallback()
+{
+	if (sLiveResizeApp == nullptr)
+	{
+		return;
+	}
+	OSXApplyResizeIfNeeded(sLiveResizeApp, true);
+
+	sLiveResizeApp->gfxAPIDraw();
+	CWSwapBuffers();
+}
+
 OSXApp::OSXApp(const int argc, const char *argv[]) :
 	Application(argc,argv)
 {
@@ -47,6 +116,10 @@ void OSXApp::createWindow(const char *title, int x, int y, int width, int height
 	}
 
 	CWOpenWindow(x, y, width, height, 0, &m_scaleFactor);
+	sLiveResizeApp = this;
+	sLastAppliedResizeW = -1;
+	sLastAppliedResizeH = -1;
+	CWSetLiveResizeDrawCallback(OSXLiveResizeDrawCallback);
 #if !FI_GFX_METAL
 	CWSetVSync(m_bVsyncEnabled);
 	FI::LOG("OSXApp OpenGL vsync:", m_bVsyncEnabled ? "enabled" : "disabled");
@@ -69,6 +142,10 @@ void OSXApp::createWindow(const char *title, int x, int y, int width, int height
 
 void OSXApp::destroyWindow()
 {
+	CWSetLiveResizeDrawCallback(nullptr);
+	sLiveResizeApp = nullptr;
+	sLastAppliedResizeW = -1;
+	sLastAppliedResizeH = -1;
 	gfxAPIDeinit();
 }
 
@@ -91,6 +168,9 @@ void OSXApp::mainloop()
 			return;
 			
 		CWPollDevice();		// handle events
+
+		// Keep resize sync in lockstep with Cocoa even when no drawRect callback fires.
+		OSXApplyResizeIfNeeded(this, true);
 		
 		int lb, mb, rb, mx, my;
 		int mevent = CWGetMouseEvent(&lb, &mb, &rb, &mx, &my);

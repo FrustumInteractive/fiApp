@@ -85,7 +85,12 @@ static int charBuffer[NKEYBUF];
 static int nMosBufUsed=0;
 static struct CWMouseEventLog mosBuffer[NKEYBUF];
 
-static int exposure=0;
+static bool gResizePending = false;
+static int gResizeWidth = 0;
+static int gResizeHeight = 0;
+static int gLastObservedWidth = 0;
+static int gLastObservedHeight = 0;
+static CWLiveResizeDrawCallback gLiveResizeDrawCallback = 0;
 
 
 @interface CWMacDelegate : NSObject <NSApplicationDelegate>
@@ -161,12 +166,29 @@ static CWView *cwView=nil;
 
 - (void) windowDidResize: (NSNotification *)notification
 {
+	if(cwView != nil)
+	{
+		NSRect rect = [cwView frame];
+		gResizeWidth = (int)rect.size.width;
+		gResizeHeight = (int)rect.size.height;
+		gResizePending = true;
+	}
+
 #if FI_GFX_METAL
 	if (!cwView || !cwMetalLayer) return;
 	NSRect bounds = [cwView bounds];
 	CGFloat s = [[self screen] backingScaleFactor];
 	cwMetalLayer.contentsScale = s;
 	cwMetalLayer.drawableSize = CGSizeMake(bounds.size.width * s, bounds.size.height * s);
+#else
+	if(cwView != nil)
+	{
+		NSOpenGLContext *ctx = [cwView openGLContext];
+		if(ctx != nil)
+		{
+			[ctx update];
+		}
+	}
 #endif
 }
 
@@ -181,10 +203,41 @@ static CWView *cwView=nil;
 
 
 @implementation CWView
+-(BOOL) preservesContentDuringLiveResize
+{
+	// Force real redraws during interactive resize instead of stretched old framebuffer.
+	return NO;
+}
+
+-(void) reshape
+{
+	[super reshape];
+
+	// AppKit calls this during live resize. Capture the latest content size here so
+	// the app can react immediately instead of waiting for deferred notifications.
+	if(cwView != nil)
+	{
+		NSRect rect = [cwView bounds];
+		gResizeWidth = (int)rect.size.width;
+		gResizeHeight = (int)rect.size.height;
+		gResizePending = true;
+	}
+
+#if !FI_GFX_METAL
+	NSOpenGLContext *ctx = [self openGLContext];
+	if(ctx != nil)
+	{
+		[ctx update];
+	}
+#endif
+}
+
 -(void) drawRect: (NSRect) bounds
 {
-	printf("%s\n",__FUNCTION__);
-	exposure=1;
+	if(cwWnd != nil && [cwWnd inLiveResize] && gLiveResizeDrawCallback != 0)
+	{
+		gLiveResizeDrawCallback();
+	}
 }
 
 -(NSMenu *)menuForEvent: (NSEvent *)theEvent
@@ -657,6 +710,19 @@ void CWOpenWindowC(int x0,int y0,int wid,int hei,int useDoubleBuffer, float *sca
 	{
 		cwKeyIsDown[i]=0;
 	}
+
+	// Seed resize tracking with initial content size.
+#if FI_GFX_METAL
+	NSRect b = [cwView bounds];
+	gLastObservedWidth = (int)b.size.width;
+	gLastObservedHeight = (int)b.size.height;
+#else
+	NSRect b = [cwView bounds];
+	gLastObservedWidth = (int)b.size.width;
+	gLastObservedHeight = (int)b.size.height;
+#endif
+	gResizeWidth = gLastObservedWidth;
+	gResizeHeight = gLastObservedHeight;
 }
 
 void CWGetWindowSizeC(int *wid,int *hei)
@@ -667,10 +733,27 @@ void CWGetWindowSizeC(int *wid,int *hei)
 	*hei = (int)ds.height;
 #else
 	NSRect rect;
-	rect=[cwView frame];
+	rect=[cwView bounds];
 	*wid=rect.size.width;
 	*hei=rect.size.height;
 #endif
+}
+
+int CWConsumeResizeEventC(int *wid,int *hei)
+{
+	if(gResizePending)
+	{
+		gResizePending = false;
+		*wid = gResizeWidth;
+		*hei = gResizeHeight;
+		return 1;
+	}
+	return 0;
+}
+
+void CWSetLiveResizeDrawCallbackC(CWLiveResizeDrawCallback cb)
+{
+	gLiveResizeDrawCallback = cb;
 }
 
 void CWGetScreenSizeC(int *w, int *h)
@@ -739,28 +822,68 @@ void CWPollDeviceC(void)
  	NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
 #endif
 
-	while(1)
+	// Keep event handling responsive but bounded per frame so rendering can continue
+	// during heavy input streams (for example live window resize).
+	const int kMaxEventsPerPoll = 64;
+	int processed = 0;
+	while(processed < kMaxEventsPerPoll)
 	{
 #ifndef ARC
 	 	[pool release];
 	 	pool=[[NSAutoreleasePool alloc] init];
 #endif
-	
-		NSEvent *event;
-		event=[NSApp
-			   nextEventMatchingMask:NSEventMaskAny
-			   untilDate: [NSDate distantPast]
-			   inMode: NSDefaultRunLoopMode
-			   dequeue:YES];
 
-		if(event!=nil)
+		NSEvent *event = [NSApp
+			nextEventMatchingMask:NSEventMaskAny
+			untilDate:[NSDate distantPast]
+			inMode:NSDefaultRunLoopMode
+			dequeue:YES];
+
+		if(event == nil)
 		{
-			[NSApp sendEvent:event];
-			[NSApp updateWindows];
+			// During live window resize, AppKit posts events in tracking mode.
+			// Pump this mode too so rendering/layout/input continue while dragging.
+			event = [NSApp
+				nextEventMatchingMask:NSEventMaskAny
+				untilDate:[NSDate distantPast]
+				inMode:NSEventTrackingRunLoopMode
+				dequeue:YES];
 		}
-		else
-		{	
+
+		if(event == nil)
+		{
+			// Also service modal-loop events when panels/menus are active.
+			event = [NSApp
+				nextEventMatchingMask:NSEventMaskAny
+				untilDate:[NSDate distantPast]
+				inMode:NSModalPanelRunLoopMode
+				dequeue:YES];
+		}
+
+		if(event == nil)
+		{
 			break;
+		}
+
+		[NSApp sendEvent:event];
+		[NSApp updateWindows];
+		processed++;
+	}
+
+	// Fallback resize detection for live-resize paths where notifications may be
+	// delayed/coalesced. This keeps the app resize callback in sync per frame.
+	if(cwView != nil)
+	{
+		NSRect rect = [cwView bounds];
+		int w = (int)rect.size.width;
+		int h = (int)rect.size.height;
+		if(w > 0 && h > 0 && (w != gLastObservedWidth || h != gLastObservedHeight))
+		{
+			gLastObservedWidth = w;
+			gLastObservedHeight = h;
+			gResizeWidth = w;
+			gResizeHeight = h;
+			gResizePending = true;
 		}
 	}
 #ifndef ARC
@@ -926,14 +1049,6 @@ void CWChangeToProgramDirC(void)
 	printf("BundlePath:%s\n",[path UTF8String]);
 
 	[[NSFileManager defaultManager] changeCurrentDirectoryPath:path];
-}
-
-int CWCheckExposureC(void)
-{
-	int ret;
-	ret=exposure;
-	exposure=0;
-	return ret;
 }
 
 int CWCheckQuitMessageC(void)
