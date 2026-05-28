@@ -14,6 +14,7 @@ using namespace std;
 static OSXApp *sLiveResizeApp = nullptr;
 static int sLastAppliedResizeW = -1;
 static int sLastAppliedResizeH = -1;
+static bool sDrawInProgress = false;
 
 static bool OSXGetLatestWindowSize(int &winW, int &winH)
 {
@@ -74,10 +75,16 @@ static void OSXLiveResizeDrawCallback()
 	{
 		return;
 	}
+	if (sDrawInProgress)
+	{
+		return;
+	}
+	sDrawInProgress = true;
 	OSXApplyResizeIfNeeded(sLiveResizeApp, true);
 
 	sLiveResizeApp->gfxAPIDraw();
 	CWSwapBuffers();
+	sDrawInProgress = false;
 }
 
 OSXApp::OSXApp(const int argc, const char *argv[]) :
@@ -270,6 +277,9 @@ void OSXApp::mainloop()
 			setEvent(e);
 		}
 
+			if (!sDrawInProgress)
+			{
+				sDrawInProgress = true;
 			gfxAPIDraw();		// our draw call
 #if !FI_GFX_METAL
 			auto swapBegin = Clock::now();
@@ -292,6 +302,8 @@ void OSXApp::mainloop()
 				swapFrames = 0;
 			}
 #endif
+				sDrawInProgress = false;
+			}
 			//CWSleep(17);
 		}
 }
