@@ -53,6 +53,7 @@ PFNGLCLEARPROC glClear;
 PFNGLCLEARCOLORPROC glClearColor;
 PFNGLDRAWARRAYSPROC glDrawArrays;
 PFNGLDRAWELEMENTSPROC glDrawElements;
+PFNGLDRAWBUFFERPROC glDrawBuffer;
 PFNGLVIEWPORTPROC glViewport;
 PFNGLSCISSORPROC glScissor;
 PFNGLGETERRORPROC glGetError;
@@ -72,6 +73,7 @@ PFNGLDEPTHFUNCPROC glDepthFunc;
 PFNGLDEPTHMASKPROC glDepthMask;
 
 PFNGLREADPIXELSPROC glReadPixels;
+PFNGLREADBUFFERPROC glReadBuffer;
 PFNGLPIXELSTOREIPROC glPixelStorei;
 PFNGLPIXELSTOREFPROC glPixelStoref;
 
@@ -347,6 +349,7 @@ void initGL10Funcs()
 	glClearColor = (PFNGLCLEARCOLORPROC)getProcAddress("glClearColor");
 	glDrawArrays = (PFNGLDRAWARRAYSPROC)getProcAddress("glDrawArrays");
 	glDrawElements = (PFNGLDRAWELEMENTSPROC)getProcAddress("glDrawElements");
+	glDrawBuffer = (PFNGLDRAWBUFFERPROC)getProcAddress("glDrawBuffer");
 	glViewport = (PFNGLVIEWPORTPROC)getProcAddress("glViewport");
 	glScissor = (PFNGLSCISSORPROC)getProcAddress("glScissor");
 	glGetError = (PFNGLGETERRORPROC)getProcAddress("glGetError");
@@ -366,6 +369,7 @@ void initGL10Funcs()
 	glDepthMask = (PFNGLDEPTHMASKPROC)getProcAddress("glDepthMask");
 	
 	glReadPixels = (PFNGLREADPIXELSPROC)getProcAddress("glReadPixels");
+	glReadBuffer = (PFNGLREADBUFFERPROC)getProcAddress("glReadBuffer");
 	glPixelStorei = (PFNGLPIXELSTOREIPROC)getProcAddress("glPixelStorei");
 	glPixelStoref = (PFNGLPIXELSTOREFPROC)getProcAddress("glPixelStoref");
 #endif
