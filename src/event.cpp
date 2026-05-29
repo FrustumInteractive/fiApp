@@ -13,11 +13,24 @@ void Event::setData( float x, float y )
 {
 	memcpy(&m_byteData[0],&x,sizeof(float));
 	memcpy(&m_byteData[4],&y,sizeof(float));
+	float zero = 0.0f;
+	memcpy(&m_byteData[8],&zero,sizeof(float));
+	memcpy(&m_byteData[12],&zero,sizeof(float));
+}
+void Event::setData( float x, float y, float z, float w )
+{
+	memcpy(&m_byteData[0],&x,sizeof(float));
+	memcpy(&m_byteData[4],&y,sizeof(float));
+	memcpy(&m_byteData[8],&z,sizeof(float));
+	memcpy(&m_byteData[12],&w,sizeof(float));
 }
 void Event::setData( unsigned int x, unsigned int y)
 {
 	memcpy(&m_byteData[0],&x,sizeof(unsigned int));
 	memcpy(&m_byteData[4],&y,sizeof(unsigned int));
+	unsigned int zero = 0;
+	memcpy(&m_byteData[8],&zero,sizeof(unsigned int));
+	memcpy(&m_byteData[12],&zero,sizeof(unsigned int));
 }
 void Event::setData( uint64_t data )
 {
@@ -25,7 +38,7 @@ void Event::setData( uint64_t data )
 }
 void Event::setData( const unsigned char *data )
 {
-	memcpy(m_byteData, data, sizeof(uint8_t)*8);
+	memcpy(m_byteData, data, sizeof(uint8_t)*16);
 }
 void Event::setData( double data )
 {

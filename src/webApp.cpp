@@ -23,6 +23,59 @@ void main_loop()
 	loop();
 }
 
+static eKeyCode sdlKeycodeToFIKey(SDL_Keycode key)
+{
+	if (key >= SDLK_a && key <= SDLK_z)
+	{
+		return (eKeyCode)((int)KEY_A + key - SDLK_a);
+	}
+	if (key >= SDLK_0 && key <= SDLK_9)
+	{
+		return (eKeyCode)((int)KEY_0 + key - SDLK_0);
+	}
+	if (key >= SDLK_F1 && key <= SDLK_F12)
+	{
+		return (eKeyCode)((int)KEY_F1 + key - SDLK_F1);
+	}
+
+	switch (key)
+	{
+		case SDLK_SPACE: return KEY_SPACE;
+		case SDLK_ESCAPE: return KEY_ESC;
+		case SDLK_BACKSPACE: return KEY_BS;
+		case SDLK_TAB: return KEY_TAB;
+		case SDLK_RETURN: return KEY_ENTER;
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT: return KEY_SHIFT;
+		case SDLK_LCTRL:
+		case SDLK_RCTRL: return KEY_CTRL;
+		case SDLK_LALT:
+		case SDLK_RALT: return KEY_ALT;
+		case SDLK_INSERT: return KEY_INS;
+		case SDLK_DELETE: return KEY_DEL;
+		case SDLK_HOME: return KEY_HOME;
+		case SDLK_END: return KEY_END;
+		case SDLK_PAGEUP: return KEY_PAGEUP;
+		case SDLK_PAGEDOWN: return KEY_PAGEDOWN;
+		case SDLK_UP: return KEY_UP;
+		case SDLK_DOWN: return KEY_DOWN;
+		case SDLK_LEFT: return KEY_LEFT;
+		case SDLK_RIGHT: return KEY_RIGHT;
+		case SDLK_BACKQUOTE: return KEY_TILDA;
+		case SDLK_MINUS: return KEY_MINUS;
+		case SDLK_EQUALS: return KEY_PLUS;
+		case SDLK_LEFTBRACKET: return KEY_LBRACKET;
+		case SDLK_RIGHTBRACKET: return KEY_RBRACKET;
+		case SDLK_BACKSLASH: return KEY_BACKSLASH;
+		case SDLK_SEMICOLON: return KEY_SEMICOLON;
+		case SDLK_QUOTE: return KEY_SINGLEQUOTE;
+		case SDLK_COMMA: return KEY_COMMA;
+		case SDLK_PERIOD: return KEY_DOT;
+		case SDLK_SLASH: return KEY_SLASH;
+		default: return KEY_NULL;
+	}
+}
+
 WebApp::WebApp(const int argc, const char *argv[]) :
 	Application(argc, argv)
 {
@@ -52,7 +105,7 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 		m_ypos,
 		m_width,
 		m_height,
-		SDL_WINDOW_ALLOW_HIGHDPI);
+		SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 
 	if (!mWindow)
 	{
@@ -83,7 +136,7 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_CreateWindowAndRenderer(m_width, m_height,
-		SDL_WINDOW_ALLOW_HIGHDPI,
+		SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE,
 		&mWindow, nullptr);
 
 	SDL_GL_CreateContext(mWindow);
@@ -100,6 +153,7 @@ void WebApp::createWindow(const char *title, int x, int y, int width, int height
 
 	gfxAPIInit();
 	FI::LOG("WebApp::gfxAPIInit completed");
+	SDL_SetWindowInputFocus(mWindow);
 
 	loop = [&]()
 	{
@@ -120,6 +174,8 @@ void WebApp::destroyWindow()
 
 void WebApp::mainloop()
 {
+	syncDrawableSize();
+
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev))
 	{
@@ -128,6 +184,7 @@ void WebApp::mainloop()
 		{
 			case SDL_MOUSEBUTTONDOWN:
 			{
+				SDL_SetWindowInputFocus(mWindow);
 				if (ev.button.button == SDL_BUTTON_LEFT)
 				{
 					m_leftBtnDown = true;
@@ -196,7 +253,11 @@ void WebApp::mainloop()
 				{
 					e.setType(FI::EVENT_MOUSE_MOVE);
 				}
-				e.setData((float)ev.motion.x, (float)ev.motion.y);
+				e.setData(
+					(float)ev.motion.x,
+					(float)ev.motion.y,
+					(float)ev.motion.xrel,
+					(float)ev.motion.yrel);
 				setEvent(e);
 				break;
 			}
@@ -218,6 +279,33 @@ void WebApp::mainloop()
 				break;
 			}
 
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+			{
+				if (ev.key.repeat)
+				{
+					break;
+				}
+				eKeyCode kc = sdlKeycodeToFIKey(ev.key.keysym.sym);
+				if (kc != KEY_NULL)
+				{
+					e.setType(ev.type == SDL_KEYDOWN ? FI::EVENT_KEY_PRESS : FI::EVENT_KEY_RELEASE);
+					e.setData((unsigned int)kc, 0);
+					setEvent(e);
+				}
+				break;
+			}
+
+			case SDL_WINDOWEVENT:
+			{
+				if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+					ev.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					syncDrawableSize();
+				}
+				break;
+			}
+
 			case SDL_QUIT:
 				m_bQuit = true;
 				break;
@@ -231,6 +319,42 @@ void WebApp::mainloop()
 #if !defined(FI_GFX_WEBGPU)
 	swapBuffers();
 #endif
+}
+
+void WebApp::setRelativeMouseMode(bool enabled)
+{
+	m_relativeMouseMode = enabled;
+	if (enabled)
+	{
+		emscripten_request_pointerlock("#canvas", true);
+	}
+	else
+	{
+		emscripten_exit_pointerlock();
+	}
+	SDL_SetRelativeMouseMode(enabled ? SDL_TRUE : SDL_FALSE);
+}
+
+void WebApp::syncDrawableSize()
+{
+	if (!mWindow)
+	{
+		return;
+	}
+
+	int drawableW = 0;
+	int drawableH = 0;
+#if defined(FI_GFX_WEBGPU)
+	SDL_GetWindowSize(mWindow, &drawableW, &drawableH);
+#else
+	SDL_GL_GetDrawableSize(mWindow, &drawableW, &drawableH);
+#endif
+	if (drawableW > 0 && drawableH > 0 && (drawableW != m_width || drawableH != m_height))
+	{
+		m_width = drawableW;
+		m_height = drawableH;
+		resize(m_width, m_height);
+	}
 }
 
 void WebApp::swapBuffers()

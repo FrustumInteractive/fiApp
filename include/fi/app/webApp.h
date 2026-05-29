@@ -12,6 +12,7 @@
 #include "app.h"
 
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #include <SDL2/SDL.h>
 
 #if defined(FI_GFX_WEBGPU)
@@ -41,16 +42,19 @@ public:
 
 	void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen) override;
 	void destroyWindow() override;
+	void setRelativeMouseMode(bool enabled) override;
 
 	void mainloop() override;
 
 protected:
 	void swapBuffers();
+	void syncDrawableSize();
 
 	SDL_Window *mWindow = nullptr;
 	bool m_leftBtnDown = false;
 	bool m_middleBtnDown = false;
 	bool m_rightBtnDown = false;
+	bool m_relativeMouseMode = false;
 
 #if defined(FI_GFX_WEBGPU)
 	WGPUDevice m_wgpuDevice = nullptr;

@@ -70,6 +70,7 @@ struct CWMouseEventLog
 	int eventType;
 	int lb,mb,rb;
 	int mx,my;
+	float dx,dy;
 };
 
 
@@ -388,6 +389,8 @@ static CWView *cwView=nil;
 
 		mosBuffer[nMosBufUsed-1].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed-1].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed-1].dx += (float)[theEvent deltaX];
+		mosBuffer[nMosBufUsed-1].dy += (float)[theEvent deltaY];
 	}
 	else if(NKEYBUF>nMosBufUsed)
 	{
@@ -397,6 +400,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_MOVE;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=(float)[theEvent deltaX];
+		mosBuffer[nMosBufUsed].dy=(float)[theEvent deltaY];
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -431,6 +436,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_LBUTTONDOWN;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -450,6 +457,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_LBUTTONUP;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -469,6 +478,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_RBUTTONDOWN;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -488,6 +499,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_RBUTTONUP;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -507,6 +520,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_MBUTTONDOWN;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -526,6 +541,8 @@ static CWView *cwView=nil;
 		mosBuffer[nMosBufUsed].eventType=MOUSEEVENT_MBUTTONUP;
 		mosBuffer[nMosBufUsed].mx=(int)[theEvent locationInWindow].x;
 		mosBuffer[nMosBufUsed].my=rect.size.height-1-(int)[theEvent locationInWindow].y;
+		mosBuffer[nMosBufUsed].dx=0.0f;
+		mosBuffer[nMosBufUsed].dy=0.0f;
 		mosBuffer[nMosBufUsed].lb=mouseLb;
 		mosBuffer[nMosBufUsed].mb=mouseMb;
 		mosBuffer[nMosBufUsed].rb=mouseRb;
@@ -789,7 +806,7 @@ void CWMouseC(int *lb,int *mb,int *rb,int *mx,int *my)
 	*my=rect.size.height-1-loc.y;
 }
 
-int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my)
+int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my,float *dx,float *dy)
 {
 	if(0<nMosBufUsed)
 	{
@@ -799,6 +816,8 @@ int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my)
 		*rb=mosBuffer[0].rb;
 		*mx=mosBuffer[0].mx;
 		*my=mosBuffer[0].my;
+		*dx=mosBuffer[0].dx;
+		*dy=mosBuffer[0].dy;
 
 		int i;
 		for(i=0; i<nMosBufUsed-1; i++)
@@ -812,6 +831,8 @@ int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my)
 	else
 	{
 		CWMouseC(lb,mb,rb,mx,my);
+		*dx=0.0f;
+		*dy=0.0f;
 		return MOUSEEVENT_NONE;
 	}
 }
@@ -1063,6 +1084,34 @@ void CWWarpMouseCursorPositionC(unsigned x, unsigned y)
 	CGPoint p;
 	p.x = x;
 	p.y = y;
+	CGWarpMouseCursorPosition(p);
+}
+
+void CWWarpMouseCursorPositionInWindowC(unsigned x, unsigned y)
+{
+	if(nil==cwWnd || nil==cwView)
+	{
+		return;
+	}
+
+	NSRect bounds = [cwView bounds];
+	NSPoint viewPoint = NSMakePoint((CGFloat)x, bounds.size.height - 1.0 - (CGFloat)y);
+	NSPoint windowPoint = [cwView convertPoint:viewPoint toView:nil];
+	NSPoint screenPoint = [cwWnd convertPointToScreen:windowPoint];
+
+	NSScreen *screen = [cwWnd screen];
+	if(nil==screen)
+	{
+		screen = [NSScreen mainScreen];
+	}
+	NSRect screenFrame = [screen frame];
+	CGPoint p;
+	p.x = screenPoint.x - screenFrame.origin.x;
+	p.y = screenFrame.origin.y + screenFrame.size.height - screenPoint.y;
+	if(p.x < 0.0) p.x = 0.0;
+	if(p.y < 0.0) p.y = 0.0;
+	if(p.x > screenFrame.size.width - 1.0) p.x = screenFrame.size.width - 1.0;
+	if(p.y > screenFrame.size.height - 1.0) p.y = screenFrame.size.height - 1.0;
 	CGWarpMouseCursorPosition(p);
 }
 

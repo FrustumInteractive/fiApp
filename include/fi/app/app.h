@@ -63,6 +63,8 @@ public:
 	virtual void resize(int width, int height) {}
 
 	virtual void warpMouseCursorPosition(unsigned int x, unsigned int y){}
+	virtual void warpMouseCursorPositionInWindow(float x, float y){}
+	virtual void setRelativeMouseMode(bool enabled){}
 
 	virtual void gfxAPIInit() {}
 	virtual void gfxAPIDraw() {}

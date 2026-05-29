@@ -68,9 +68,12 @@ void Application::setEvent(FI::Event e)
 		case FI::EVENT_MOUSE_MOVE:
 		{
 			// normalize to opengl coords
-			float x = e.data_float()[0] / m_width * m_scaleFactor;
-			float y = 1.0f - e.data_float()[1] / m_height * m_scaleFactor;
-			e.setData(x,y);
+			const float *mouseData = e.data_float();
+			float x = mouseData[0] / m_width * m_scaleFactor;
+			float y = 1.0f - mouseData[1] / m_height * m_scaleFactor;
+			float dx = mouseData[2] / m_width * m_scaleFactor;
+			float dy = mouseData[3] / m_height * m_scaleFactor;
+			e.setData(x,y,dx,dy);
 		}
 			break;
 

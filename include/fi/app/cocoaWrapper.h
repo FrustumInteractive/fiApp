@@ -19,13 +19,14 @@ void     CWSetLiveResizeDrawCallback(CWLiveResizeDrawCallback cb);
 void     CWSleep(int ms);
 int      CWPassedTime(void);
 void     CWGetMouseState(int *lb,int *mb,int *rb,int *mx,int *my);
-int      CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my);
+int      CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my,float *dx = nullptr,float *dy = nullptr);
 void     CWSwapBuffers(void);
 eKeyCode CWInkey(void);
 char     CWInkeyChar(void);
 int      CWGetKeyState(eKeyCode);
 int      CWCheckQuitMessage(void);
 void     CWWarpMouseCursorPosition(unsigned x, unsigned y);
+void     CWWarpMouseCursorPositionInWindow(unsigned x, unsigned y);
 void     CWSetVSync(bool enabled);
 
 #if FI_GFX_METAL

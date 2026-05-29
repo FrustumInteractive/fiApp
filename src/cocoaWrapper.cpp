@@ -28,7 +28,7 @@ extern "C" void CWSetLiveResizeDrawCallbackC(CWLiveResizeDrawCallback cb);
 extern "C" void CWSleepC(int ms);
 extern "C" int CWPassedTimeC(void);
 extern "C" void CWMouseC(int *lb,int *mb,int *rb,int *mx,int *my);
-extern "C" int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my);
+extern "C" int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my,float *dx,float *dy);
 extern "C" void CWSwapBufferC(void);
 extern "C" eKeyCode CWInkeyC(void);
 extern "C" char CWInkeyCharC(void);
@@ -36,6 +36,7 @@ extern "C" int CWKeyStateC(eKeyCode kc);
 extern "C" void CWChangeToProgramDirC(void);
 extern "C" int CWCheckQuitMessageC(void);
 extern "C" void CWWarpMouseCursorPositionC(unsigned x, unsigned y);
+extern "C" void CWWarpMouseCursorPositionInWindowC(unsigned x, unsigned y);
 extern "C" void CWSetVSyncC(int enabled);
 
 #if FI_GFX_METAL
@@ -93,9 +94,13 @@ void CWGetMouseState(int *lb, int *mb, int *rb, int *mx, int *my)
 	CWMouseC(lb,mb,rb,mx,my);
 }
 
-int CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my)
+int CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my,float *dx,float *dy)
 {
-	return CWGetMouseEventC(lb,mb,rb,mx,my);
+	float dummyDx = 0.0f;
+	float dummyDy = 0.0f;
+	if(!dx) dx = &dummyDx;
+	if(!dy) dy = &dummyDy;
+	return CWGetMouseEventC(lb,mb,rb,mx,my,dx,dy);
 }
 
 void CWSwapBuffers(void)
@@ -131,6 +136,11 @@ void CWChangeToProgramDir(void)
 void CWWarpMouseCursorPosition(unsigned x, unsigned y)
 {
 	CWWarpMouseCursorPositionC(x, y);
+}
+
+void CWWarpMouseCursorPositionInWindow(unsigned x, unsigned y)
+{
+	CWWarpMouseCursorPositionInWindowC(x, y);
 }
 
 void CWSetVSync(bool enabled)

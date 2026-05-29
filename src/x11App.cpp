@@ -250,6 +250,10 @@ void X11App::destroyWindow()
 
 void X11App::mainloop()
 {
+	bool hasLastMousePosition = false;
+	float lastMouseX = 0.0f;
+	float lastMouseY = 0.0f;
+
 	while (!m_bQuit)
 	{
 		if (XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &m_xEvent))
@@ -315,6 +319,9 @@ void X11App::mainloop()
 			switch(m_xEvent.type)
 			{
 				case ButtonPress:
+					hasLastMousePosition = true;
+					lastMouseX = (float)m_xEvent.xbutton.x;
+					lastMouseY = (float)m_xEvent.xbutton.y;
 					switch(m_xEvent.xbutton.button)
 					{
 						case Button1:
@@ -331,6 +338,9 @@ void X11App::mainloop()
 					break;
 
 				case ButtonRelease:
+					hasLastMousePosition = true;
+					lastMouseX = (float)m_xEvent.xbutton.x;
+					lastMouseY = (float)m_xEvent.xbutton.y;
 					switch(m_xEvent.xbutton.button)
 					{
 						case Button1:
@@ -347,28 +357,38 @@ void X11App::mainloop()
 					break;
 
 				case MotionNotify:
+				{
+					const float mouseX = (float)m_xEvent.xmotion.x;
+					const float mouseY = (float)m_xEvent.xmotion.y;
+					const float mouseDx = hasLastMousePosition ? mouseX - lastMouseX : 0.0f;
+					const float mouseDy = hasLastMousePosition ? mouseY - lastMouseY : 0.0f;
+					hasLastMousePosition = true;
+					lastMouseX = mouseX;
+					lastMouseY = mouseY;
+
 					if(m_xEvent.xmotion.state & Button1MotionMask)
 					{
 						e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
-						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
+						e.setData(mouseX, mouseY, mouseDx, mouseDy);
 						setEvent(e);
 					}
 					else if(m_xEvent.xmotion.state & Button2MotionMask)
 					{
 						e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
-						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
+						e.setData(mouseX, mouseY, mouseDx, mouseDy);
 						setEvent(e);
 					}
 					else if(m_xEvent.xmotion.state & Button3MotionMask)
 					{
 						e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
-						e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
+						e.setData(mouseX, mouseY, mouseDx, mouseDy);
 						setEvent(e);
 					}
 
 					e.setType(FI::EVENT_MOUSE_MOVE);
-					e.setData((float)m_xEvent.xmotion.x, (float)m_xEvent.xmotion.y);
+					e.setData(mouseX, mouseY, mouseDx, mouseDy);
 					break;
+				}
 
 				default:
 					break;

@@ -166,6 +166,8 @@ void OSXApp::mainloop()
 	auto swapWindowStart = Clock::now();
 	double swapWindowSeconds = 0.0;
 	double swapBlockSeconds = 0.0;
+	double maxFrameSeconds = 0.0;
+	unsigned int slowFrames = 0;
 	unsigned int swapFrames = 0;
 #endif
 
@@ -180,7 +182,9 @@ void OSXApp::mainloop()
 		OSXApplyResizeIfNeeded(this, true);
 		
 		int lb, mb, rb, mx, my;
-		int mevent = CWGetMouseEvent(&lb, &mb, &rb, &mx, &my);
+		float mdx = 0.0f;
+		float mdy = 0.0f;
+		int mevent = CWGetMouseEvent(&lb, &mb, &rb, &mx, &my, &mdx, &mdy);
 		FI::Event e;
 		
 		switch(mevent) 
@@ -231,22 +235,22 @@ void OSXApp::mainloop()
 				if (bLeftBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
-					e.setData((float)mx, (float)my);
+					e.setData((float)mx, (float)my, mdx, mdy);
 				}
 				else if (bMiddleBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
-					e.setData((float)mx, (float)my);
+					e.setData((float)mx, (float)my, mdx, mdy);
 				}
 				else if (bRightBtnDown)
 				{
 					e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
-					e.setData((float)mx, (float)my);
+					e.setData((float)mx, (float)my, mdx, mdy);
 				}
 				else
 				{
 					e.setType(FI::EVENT_MOUSE_MOVE);
-					e.setData((float)mx, (float)my);
+					e.setData((float)mx, (float)my, mdx, mdy);
 				}
 				setEvent(e);
 				break;
@@ -280,6 +284,9 @@ void OSXApp::mainloop()
 			if (!sDrawInProgress)
 			{
 				sDrawInProgress = true;
+#if !FI_GFX_METAL
+			auto frameBegin = Clock::now();
+#endif
 			gfxAPIDraw();		// our draw call
 #if !FI_GFX_METAL
 			auto swapBegin = Clock::now();
@@ -287,6 +294,15 @@ void OSXApp::mainloop()
 			CWSwapBuffers();
 #if !FI_GFX_METAL
 			auto swapEnd = Clock::now();
+			const double frameSeconds = std::chrono::duration<double>(swapEnd - frameBegin).count();
+			if (frameSeconds > maxFrameSeconds)
+			{
+				maxFrameSeconds = frameSeconds;
+			}
+			if (frameSeconds > 1.0 / 30.0)
+			{
+				slowFrames++;
+			}
 			swapFrames++;
 			swapBlockSeconds += std::chrono::duration<double>(swapEnd - swapBegin).count();
 			swapWindowSeconds = std::chrono::duration<double>(swapEnd - swapWindowStart).count();
@@ -295,10 +311,22 @@ void OSXApp::mainloop()
 			{
 				double swapFps = (double)swapFrames / swapWindowSeconds;
 				double avgSwapBlockMs = (swapBlockSeconds / (double)swapFrames) * 1000.0;
-				FI::LOG("swap fps avg (", swapWindowSeconds, "s):", swapFps, " avg swap block (ms):", avgSwapBlockMs);
+				FI::LOG(
+					"swap fps avg (",
+					swapWindowSeconds,
+					"s):",
+					swapFps,
+					" avg swap block (ms):",
+					avgSwapBlockMs,
+					" max frame (ms):",
+					maxFrameSeconds * 1000.0,
+					" slow frames >33ms:",
+					slowFrames);
 				swapWindowStart = swapEnd;
 				swapWindowSeconds = 0.0;
 				swapBlockSeconds = 0.0;
+				maxFrameSeconds = 0.0;
+				slowFrames = 0;
 				swapFrames = 0;
 			}
 #endif
@@ -311,6 +339,23 @@ void OSXApp::mainloop()
 void OSXApp::warpMouseCursorPosition(unsigned x, unsigned y)
 {
 	CWWarpMouseCursorPosition(x, y);
+}
+
+void OSXApp::warpMouseCursorPositionInWindow(float x, float y)
+{
+	if (m_scaleFactor <= 0.0f)
+	{
+		return;
+	}
+
+	if (x < 0.0f) x = 0.0f;
+	if (x > 1.0f) x = 1.0f;
+	if (y < 0.0f) y = 0.0f;
+	if (y > 1.0f) y = 1.0f;
+
+	const unsigned localX = (unsigned)(x * (float)m_width / m_scaleFactor);
+	const unsigned localY = (unsigned)((1.0f - y) * (float)m_height / m_scaleFactor);
+	CWWarpMouseCursorPositionInWindow(localX, localY);
 }
 
 void OSXApp::swapBuffers()

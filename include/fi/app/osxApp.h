@@ -14,6 +14,7 @@ public:
 	void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen) override;
 	void destroyWindow() override;
 	void warpMouseCursorPosition(unsigned x, unsigned y) override;
+	void warpMouseCursorPositionInWindow(float x, float y) override;
 	void mainloop() override;
 
 protected:

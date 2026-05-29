@@ -52,6 +52,7 @@ public:
 	void setType( eEventType type );
 
 	void setData( float x, float y);
+	void setData( float x, float y, float z, float w);
 	void setData( uint64_t data );
 	void setData( unsigned int x, unsigned int y);
 	void setData( const double data );
@@ -73,7 +74,7 @@ public:
 protected:
 	eEventType m_type;
 
-	unsigned char m_byteData[8];
+	unsigned char m_byteData[16]{};
 
 	std::string m_sourceName;
 	unsigned int m_sourceID;
