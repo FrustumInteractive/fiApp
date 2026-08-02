@@ -3,10 +3,10 @@
 
 #include "fi/app/oglApp.h"
 
-#ifdef WIN32
-#include "application/d3d9App.h"
 //#define D3D9
-#endif // WIN32
+#ifdef D3D9
+#include "fi/app/d3d9App.h"
+#endif
 
 #include "fi/app/threading.h"
 #include "fi/app/json.h"

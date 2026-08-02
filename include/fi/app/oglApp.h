@@ -13,6 +13,7 @@
 
 #if defined(WIN32)
 	#include "win32App.h"
+	#include <fi/gl/glProcs.h>
 	class OGLApp : public Win32App
 #elif defined(WEB)
 	#include "webApp.h"

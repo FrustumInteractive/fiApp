@@ -9,12 +9,95 @@
 #include <iostream>
 
 #include "fi/app/console.h"
-#include "fi/app/Win32App.h"
+#include "fi/app/win32App.h"
 
 using namespace std;
 
+namespace
+{
+float enableHighDpiRendering()
+{
+	// Resolve newer DPI APIs dynamically so the same binary remains usable on
+	// older Windows versions covered by the Win7 compatibility baseline.
+	HMODULE user32 = GetModuleHandleA("user32.dll");
+	if (user32)
+	{
+		using SetProcessDpiAwarenessContextFn = BOOL (WINAPI *)(HANDLE);
+		auto setDpiContext = reinterpret_cast<SetProcessDpiAwarenessContextFn>(
+			GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+		if (setDpiContext)
+		{
+			// DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+			setDpiContext(reinterpret_cast<HANDLE>(-4));
+		}
+		else
+		{
+			using SetProcessDPIAwareFn = BOOL (WINAPI *)();
+			auto setDpiAware = reinterpret_cast<SetProcessDPIAwareFn>(
+				GetProcAddress(user32, "SetProcessDPIAware"));
+			if (setDpiAware)
+			{
+				setDpiAware();
+			}
+		}
+
+		using GetDpiForSystemFn = UINT (WINAPI *)();
+		auto getDpiForSystem = reinterpret_cast<GetDpiForSystemFn>(
+			GetProcAddress(user32, "GetDpiForSystem"));
+		if (getDpiForSystem)
+		{
+			return static_cast<float>(getDpiForSystem()) / 96.0f;
+		}
+	}
+
+	HDC screenDC = GetDC(nullptr);
+	const int dpi = screenDC ? GetDeviceCaps(screenDC, LOGPIXELSX) : 96;
+	if (screenDC)
+	{
+		ReleaseDC(nullptr, screenDC);
+	}
+	return static_cast<float>(dpi) / 96.0f;
+}
+
+eKeyCode keyCodeFromVirtualKey(WPARAM vk)
+{
+	if (vk >= '0' && vk <= '9') return (eKeyCode)(KEY_0 + vk - '0');
+	if (vk >= 'A' && vk <= 'Z') return (eKeyCode)(KEY_A + vk - 'A');
+	if (vk >= VK_F1 && vk <= VK_F12) return (eKeyCode)(KEY_F1 + vk - VK_F1);
+
+	switch (vk)
+	{
+		case VK_ESCAPE: return KEY_ESC;
+		case VK_SPACE: return KEY_SPACE;
+		case VK_BACK: return KEY_BS;
+		case VK_TAB: return KEY_TAB;
+		case VK_RETURN: return KEY_ENTER;
+		case VK_SHIFT: return KEY_SHIFT;
+		case VK_CONTROL: return KEY_CTRL;
+		case VK_MENU: return KEY_ALT;
+		case VK_INSERT: return KEY_INS;
+		case VK_DELETE: return KEY_DEL;
+		case VK_HOME: return KEY_HOME;
+		case VK_END: return KEY_END;
+		case VK_PRIOR: return KEY_PAGEUP;
+		case VK_NEXT: return KEY_PAGEDOWN;
+		case VK_UP: return KEY_UP;
+		case VK_DOWN: return KEY_DOWN;
+		case VK_LEFT: return KEY_LEFT;
+		case VK_RIGHT: return KEY_RIGHT;
+		case VK_NUMLOCK: return KEY_NUMLOCK;
+		default: return KEY_NULL;
+	}
+}
+}
+
 Win32App::Win32App(const int argc, const char *argv[]) :
 	Application(argc, argv),
+	m_hDC(nullptr),
+	m_hRC(nullptr),
+	m_hWnd(nullptr),
+	m_hInstance(nullptr),
+	m_appName(nullptr),
 	m_bitsPerPixel(24),
 	m_bKeys()
 {
@@ -40,26 +123,12 @@ void Win32App::mainloop()
 		}
 		else
 		{
-			// Draw The Scene.
-			if (m_bKeys[VK_ESCAPE])	onKeyPress(KEY_ESC); 
-			else if(m_bKeys['Q']) onKeyPress(KEY_Q); //VK_A..Z maps to ASCII
-			else if (m_bKeys[VK_F1]) onKeyPress(KEY_F1);
-			/*	
-			{	
-				destroyWindow();		// Kill Our Current Window
-				m_bFullscreen=!m_bFullscreen;	// Toggle Fullscreen / Windowed Mode
-				
-				int w = m_bFullscreen ? m_fullscreenRECT.right : m_windowRECT.right;
-				int h = m_bFullscreen ? m_fullscreenRECT.bottom : m_windowRECT.bottom;
-
-				createWindow(m_appName, m_xpos, m_ypos, w, h, m_bFullscreen);
-			}
-			*/
-			else {
-				gfxAPIDraw();
+			gfxAPIDraw();
+			// OpenGL owns an HGLRC and presents through GDI. Vulkan presents its
+			// swapchain in gfxAPIDraw(), so it must not call SwapBuffers here.
+			if (m_hRC)
 				SwapBuffers(m_hDC);
-				Sleep(16.667);
-			}
+			Sleep(16);
 		}
 	}
 }
@@ -70,6 +139,15 @@ void Win32App::createWindow(const char *title, int x, int y, int width, int heig
 #ifdef _DEBUG
 	//RedirectIOToConsole();
 #endif
+
+	const float dpiScale = enableHighDpiRendering();
+	if (!fullscreen)
+	{
+		width = static_cast<int>(width * dpiScale + 0.5f);
+		height = static_cast<int>(height * dpiScale + 0.5f);
+	}
+	FI::LOG("Windows high-DPI rendering scale:", dpiScale,
+		" physical client target:", width, "x", height);
 
 	m_appName = m_title = title;
 
@@ -213,11 +291,11 @@ LRESULT CALLBACK Win32App::staticWndProc(
 	if(uMsg == WM_CREATE)   
 	{      
 		pParent = (Win32App*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-		SetWindowLongPtr(hWnd,GWL_USERDATA,(LONG_PTR)pParent);   
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pParent);
 	}  
  	else   
 	{      
-		pParent = (Win32App*)GetWindowLongPtr(hWnd,GWL_USERDATA);
+		pParent = (Win32App*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 		if(!pParent) 
 			return DefWindowProc(hWnd,uMsg,wParam,lParam);   
 	}   
@@ -270,13 +348,24 @@ LRESULT Win32App::WndProc(
 
 		case WM_KEYDOWN:		// Is A Key Being Held Down?
 		{
-			m_bKeys[wParam] = true;	// If So, Mark It As TRUE
+			if (wParam < 256) m_bKeys[wParam] = true;
+			if ((lParam & (1LL << 30)) == 0)
+			{
+				FI::Event e;
+				e.setType(FI::EVENT_KEY_PRESS);
+				e.setData((unsigned int)keyCodeFromVirtualKey(wParam), 0);
+				setEvent(e);
+			}
 			return 0;		// Jump Back
 		}
 
 		case WM_KEYUP:		// Has A Key Been Released?
 		{
-			m_bKeys[wParam] = false;// If So, Mark It As FALSE
+			if (wParam < 256) m_bKeys[wParam] = false;
+			FI::Event e;
+			e.setType(FI::EVENT_KEY_RELEASE);
+			e.setData((unsigned int)keyCodeFromVirtualKey(wParam), 0);
+			setEvent(e);
 			return 0;	// Jump Back
 		}
 
@@ -288,50 +377,102 @@ LRESULT Win32App::WndProc(
 		}
 		
 		case WM_LBUTTONDOWN:
-			onLeftMouseClick(LOWORD(lParam), HIWORD(lParam));
+			SetCapture(m_hWnd);
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_LEFT_CLICK);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_LBUTTONUP:
-			onLeftMouseRelease(LOWORD(lParam), HIWORD(lParam));
+			ReleaseCapture();
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_LEFT_RELEASE);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_MBUTTONDOWN:
-			onMiddleMouseClick(LOWORD(lParam), HIWORD(lParam));
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_MIDDLE_CLICK);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_MBUTTONUP:
-			onMiddleMouseRelease(LOWORD(lParam), HIWORD(lParam));
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_MIDDLE_RELEASE);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_RBUTTONDOWN:
-			onRightMouseClick(LOWORD(lParam), HIWORD(lParam));
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_RIGHT_CLICK);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_RBUTTONUP:
-			onRightMouseRelease(LOWORD(lParam), HIWORD(lParam));
+			{
+				FI::Event e; e.setType(FI::EVENT_MOUSE_RIGHT_RELEASE);
+				e.setData((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam)); setEvent(e);
+			}
 			return 0;
 			
 		case WM_MOUSEMOVE:
-			switch(wParam)
 			{
-				case MK_LBUTTON:
-					onLeftMouseDrag(LOWORD(lParam), HIWORD(lParam));
-					return 0;
-					
-				case MK_RBUTTON:
-					onRightMouseDrag(LOWORD(lParam), HIWORD(lParam));
-					return 0;
-					
-				case MK_MBUTTON:
-					onMiddleMouseDrag(LOWORD(lParam), HIWORD(lParam));
-					return 0;
+				const float x = (float)GET_X_LPARAM(lParam);
+				const float y = (float)GET_Y_LPARAM(lParam);
+				const float dx = m_hasLastMousePosition ? x - m_lastMouseX : 0.0f;
+				const float dy = m_hasLastMousePosition ? y - m_lastMouseY : 0.0f;
+				m_hasLastMousePosition = true; m_lastMouseX = x; m_lastMouseY = y;
+				FI::Event e;
+				if (wParam & MK_LBUTTON) e.setType(FI::EVENT_MOUSE_LEFT_DRAG);
+				else if (wParam & MK_MBUTTON) e.setType(FI::EVENT_MOUSE_MIDDLE_DRAG);
+				else if (wParam & MK_RBUTTON) e.setType(FI::EVENT_MOUSE_RIGHT_DRAG);
+				else e.setType(FI::EVENT_MOUSE_MOVE);
+				e.setData(x, y, dx, dy); setEvent(e);
 			}
-			
-			onMouseMove(LOWORD(lParam), HIWORD(lParam));
 			return 0;
+
+		case WM_MOUSEWHEEL:
+		{
+			FI::Event e; e.setType(FI::EVENT_MOUSE_WHEEL);
+			e.setData((float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA, 0.0f);
+			setEvent(e); return 0;
+		}
 	}
 
 	return DefWindowProc( m_hWnd, uMsg, wParam, lParam);	// Pass All Unhandled Messages To DefWindowProc
+}
+
+void Win32App::warpMouseCursorPosition(unsigned int x, unsigned int y)
+{
+	SetCursorPos((int)x, (int)y);
+}
+
+void Win32App::warpMouseCursorPositionInWindow(float x, float y)
+{
+	POINT point{(LONG)(x * m_width), (LONG)((1.0f - y) * m_height)};
+	ClientToScreen(m_hWnd, &point);
+	SetCursorPos(point.x, point.y);
+	m_lastMouseX = (float)(x * m_width);
+	m_lastMouseY = (float)((1.0f - y) * m_height);
+}
+
+void Win32App::setRelativeMouseMode(bool enabled)
+{
+	if (enabled)
+	{
+		SetCapture(m_hWnd);
+		while (ShowCursor(FALSE) >= 0) {}
+	}
+	else
+	{
+		ReleaseCapture();
+		while (ShowCursor(TRUE) < 0) {}
+	}
 }
 
 void Win32App::destroyWindow()
@@ -362,4 +503,3 @@ void Win32App::destroyWindow()
 		m_hInstance=NULL;								// Set hInstance To NULL
 	}
 }
-

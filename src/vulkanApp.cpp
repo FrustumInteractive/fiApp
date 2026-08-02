@@ -59,8 +59,10 @@ bool VulkanApp::isPresentEnabled() const
 
 void VulkanApp::resize(int width, int height)
 {
-	(void)width;
-	(void)height;
+	if (width > 0)
+		m_width = width;
+	if (height > 0)
+		m_height = height;
 	// Don't recreate immediately here; just request it.
 	// The swapchain recreate will happen on the next beginFrame or present result.
 	requestSwapchainRecreate();
@@ -177,7 +179,9 @@ void VulkanApp::createInstance()
 	std::vector<const char *> instExt;
 	instExt.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
-#if defined(OSX)
+#if defined(WIN32)
+	instExt.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined(OSX)
 	// On macOS/MoltenVK you typically need metal surface + portability enumeration.
 	instExt.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
 	instExt.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -201,7 +205,16 @@ void VulkanApp::createInstance()
 
 void VulkanApp::createSurface()
 {
-#if defined(OSX)
+#if defined(WIN32)
+	if (!m_hWnd || !m_hInstance)
+		throw std::runtime_error("Win32 Vulkan surface requires a valid HWND and HINSTANCE.");
+
+	VkWin32SurfaceCreateInfoKHR wsci{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
+	wsci.hinstance = m_hInstance;
+	wsci.hwnd = m_hWnd;
+	vkCheck(vkCreateWin32SurfaceKHR(m_instance, &wsci, nullptr, &m_surface),
+			"vkCreateWin32SurfaceKHR failed");
+#elif defined(OSX)
 	#if !defined(FI_GFX_METAL)
 		throw std::runtime_error("OSX Vulkan surface requires FI_GFX_METAL (CAMetalLayer).");
 	#else
@@ -215,7 +228,7 @@ void VulkanApp::createSurface()
 				"vkCreateMetalSurfaceEXT failed");
 	#endif
 #else
-	// TODO: Win32/X11/Android surface creation based on your native window handles.
+	// TODO: X11/Android surface creation based on native window handles.
 	throw std::runtime_error("createSurface not implemented for this platform yet.");
 #endif
 }
@@ -393,9 +406,23 @@ void VulkanApp::createSwapchain()
 		int w = 0, h = 0;
 #if defined(OSX)
 		CWGetWindowSize(w, h);
+#elif defined(WIN32)
+		RECT client{};
+		if (m_hWnd && GetClientRect(m_hWnd, &client))
+		{
+			w = client.right - client.left;
+			h = client.bottom - client.top;
+		}
+		else
+		{
+			w = m_width;
+			h = m_height;
+		}
 #else
 		// TODO: other platforms: your app framework should return drawable size
 #endif
+		if (w <= 0 || h <= 0)
+			throw std::runtime_error("Cannot create a swapchain for a zero-sized drawable.");
 		extent.width = (uint32_t)std::clamp(w, (int)caps.minImageExtent.width, (int)caps.maxImageExtent.width);
 		extent.height = (uint32_t)std::clamp(h, (int)caps.minImageExtent.height, (int)caps.maxImageExtent.height);
 	}
@@ -503,9 +530,20 @@ void VulkanApp::recreateSwapchainIfNeeded()
 	if (!m_swapchainRecreateRequested)
 		return;
 
+#if defined(WIN32)
+	// A minimized Win32 window has a zero-sized client area. Vulkan swapchains
+	// cannot have a zero extent, so leave the request pending until it is restored.
+	RECT client{};
+	if (!m_hWnd || !GetClientRect(m_hWnd, &client) ||
+		client.right <= client.left || client.bottom <= client.top)
+		return;
+#endif
+
 	vkDeviceWaitIdle(m_device);
+	onSwapchainDestroying();
 	destroySwapchain();
 	createSwapchain();
+	onSwapchainCreated();
 }
 
 // ----------------- Command Pools / Frame Sync -----------------

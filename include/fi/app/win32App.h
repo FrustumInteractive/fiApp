@@ -10,6 +10,7 @@
 #define _WIN32APP_H
 
 #include <Windows.h>
+#include <windowsx.h>
 #include "app.h"
 
 class Win32App : public Application
@@ -18,27 +19,15 @@ public:
 	Win32App(const int argc = 0, const char *argv[] = 0);
 	virtual ~Win32App(){}
 
-	virtual void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen);
-	virtual void destroyWindow();
-	virtual void mainloop();
+	void createWindow(const char *title, int x, int y, int width, int height, bool fullscreen) override;
+	void destroyWindow() override;
+	void mainloop() override;
 
-	virtual void resize(int width, int height);
+	void resize(int width, int height) override;
 
-	// keyboard
-	virtual void onKeyPress(eKeyCode kc){}
-	virtual void onKeyRelease(eKeyCode kc){}
-
-	// mouse
-	virtual void onMouseMove(int x, int y){}
-	virtual void onLeftMouseClick(int x, int y){}
-	virtual void onLeftMouseRelease(int x, int y){}
-	virtual void onLeftMouseDrag(int x, int y ){}
-	virtual void onMiddleMouseClick(int x, int y){}
-	virtual void onMiddleMouseRelease(int x, int y){}
-	virtual void onMiddleMouseDrag(int x, int y){}
-	virtual void onRightMouseClick(int x, int y){}
-	virtual void onRightMouseRelease(int x, int y){}
-	virtual void onRightMouseDrag(int x, int y){}
+	void warpMouseCursorPosition(unsigned int x, unsigned int y) override;
+	void warpMouseCursorPositionInWindow(float x, float y) override;
+	void setRelativeMouseMode(bool enabled) override;
 
 protected:
 
@@ -55,6 +44,9 @@ protected:
 		m_fullscreenRECT;
 
 	bool m_bKeys[256];     // Array Used For The Keyboard Routine
+	bool m_hasLastMousePosition = false;
+	float m_lastMouseX = 0.0f;
+	float m_lastMouseY = 0.0f;
 
 private:
 

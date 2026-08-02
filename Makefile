@@ -22,6 +22,7 @@ CXX_FILES=\
 ifneq ($(findstring FI_GFX_VULKAN,$(EXTRACXXFLAGS)),)
 CXX_FILES += \
 	vulkanApp.cpp
+
 endif
 
 C_FILES_LINUX=\
@@ -32,7 +33,8 @@ CXX_FILES_LINUX=\
 CXX_FILES_WEB=\
 	webApp.cpp
 
-#C_FILES_WIN
+C_FILES_WIN=\
+	gl/glProcs.c
 CXX_FILES_WIN=\
 	win32App.cpp \
 	d3d9App.cpp

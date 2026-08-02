@@ -1,0 +1,13 @@
+*************************************
+ Building: vulkanAppTest.exe
+*************************************
+ Compiler: clang++
+ Toolchain: llvm-msvc
+ Windows API baseline: 0x0601
+ CXXFLAGS: -I../../../../include -Ibuild/generated -IC:/VulkanSDK/1.4.357.0/Include -I./include -I/usr/include -I./external -I../../../../include -I../../../../projects -I../../../../external -IC:/VulkanSDK/1.4.357.0/Include -I../../../../extern/glew-1.13.0/include  -I../../../../projects/fiApp/include -Wall -std=c++17 -DFI_GFX_VULKAN -O3
+ DEFINES:  -DWIN32 -D_WIN32_WINNT=0x0601 -DWINVER=0x0601 -DNOMINMAX  -DAMD64
+ Compile: src/app.cpp
+ Compile: src/main.cpp
+
+ Link: vulkanAppTest.exe
+ Command: clang++ -L/usr/lib -L../../../../extern/glew-1.13.0/lib/release/win32  -L../../../../projects/fiApp/lib -o vulkanAppTest.exe   obj/app.o  obj/main.o   ../../../../lib/libfiApp.a -LC:/VulkanSDK/1.4.357.0/Lib -lvulkan-1 -lgdi32 -luser32

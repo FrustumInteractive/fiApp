@@ -1,0 +1,49 @@
+make[1]: Entering directory 'C:/Users/Roger/DEV/fi/projects/fiApp'
+
+*************************************
+	Building: libfiApp.a
+*************************************
+ Compiler: clang++
+ Toolchain: llvm-msvc
+ Windows API baseline: 0x0601
+ CXXFLAGS: -I../../include -I../ -I./include -I/usr/include -I./external -I../../external -IC:/VulkanSDK/1.4.357.0/Include -I../../extern/glew-1.13.0/include  -std=c++17 -DFI_GFX_VULKAN -O3
+ DEFINES:  -DWIN32 -D_WIN32_WINNT=0x0601 -DWINVER=0x0601 -DNOMINMAX  -DAMD64
+ Executing pre-build clean commands...
+ Compile: src/gl/glProcs.c
+ Compile: src/application.cpp
+ Compile: src/oglApp.cpp
+ Compile: src/console.cpp
+ Compile: src/fileIO.cpp
+ Compile: src/json.cpp
+ Compile: src/threading.cpp
+ Compile: src/event.cpp
+ Compile: src/vulkanApp.cpp
+ Compile: src/win32App.cpp
+ Compile: src/d3d9App.cpp
+
+ Building static library:
+llvm-ar rcs build/libfiApp.a build/obj/gl/glProcs.o build/obj/application.o build/obj/oglApp.o build/obj/console.o build/obj/fileIO.o build/obj/json.o build/obj/threading.o build/obj/event.o build/obj/vulkanApp.o build/obj/win32App.o build/obj/d3d9App.o
+
+ Copying library:
+cp -f build/libfiApp.a ../../lib/
+cp -f build/libfiApp.a lib/
+
+
+Build completed.
+
+make[1]: Leaving directory 'C:/Users/Roger/DEV/fi/projects/fiApp'
+
+*************************************
+ Building: vulkanAppTest.exe
+*************************************
+ Compiler: clang++
+ Toolchain: llvm-msvc
+ Windows API baseline: 0x0601
+ CXXFLAGS: -I../../../../include -Ibuild/generated -IC:/VulkanSDK/1.4.357.0/Include -I./include -I/usr/include -I./external -I../../../../include -I../../../../projects -I../../../../external -IC:/VulkanSDK/1.4.357.0/Include -I../../../../extern/glew-1.13.0/include  -I../../../../projects/fiApp/include -Wall -std=c++17 -DFI_GFX_VULKAN -O3
+ DEFINES:  -DWIN32 -D_WIN32_WINNT=0x0601 -DWINVER=0x0601 -DNOMINMAX  -DAMD64
+ Compile: src/app.cpp
+ Compile: src/main.cpp
+
+ Link: vulkanAppTest.exe
+ Command: clang++ -L/usr/lib -L../../../../extern/glew-1.13.0/lib/release/win32  -L../../../../projects/fiApp/lib -o vulkanAppTest.exe   obj/app.o  obj/main.o   ../../../../lib/libfiApp.a -LC:/VulkanSDK/1.4.357.0/Lib -lvulkan-1 -lgdi32 -luser32
+

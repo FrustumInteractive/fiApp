@@ -15,7 +15,17 @@
 #ifndef _VULKANAPP_H
 #define _VULKANAPP_H
 
+#if defined(WIN32) && !defined(VK_USE_PLATFORM_WIN32_KHR)
+	#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+#if (defined(OSX) || defined(__APPLE__)) && defined(FI_GFX_METAL) && !defined(VK_USE_PLATFORM_METAL_EXT)
+	#define VK_USE_PLATFORM_METAL_EXT
+#endif
+
 #include <vulkan/vulkan.h>
+#include <array>
+#include <cstdint>
+#include <vector>
 
 #if defined(WIN32)
 	#include "win32App.h"
@@ -25,6 +35,7 @@
 	class VulkanApp : public WebApp
 #elif defined(LINUX)
 	#include "x11App.h"
+	class VulkanApp : public X11App
 #elif defined(OSX)
 	#include "osxApp.h"
 	#include <vulkan/vulkan_metal.h>
@@ -163,6 +174,12 @@ protected:
 
 	// If you need to force swapchain recreate (e.g. after resize)
 	void requestSwapchainRecreate();
+
+	// Swapchain-dependent resources (framebuffers, render passes, pipelines)
+	// must be released before fiApp destroys the old image views and rebuilt
+	// after replacement views are available.
+	virtual void onSwapchainDestroying() {}
+	virtual void onSwapchainCreated() {}
 
 private:
 	// ---- internal init/cleanup ----

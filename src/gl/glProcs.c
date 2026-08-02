@@ -1,7 +1,38 @@
 #include "fi/gl/glProcs.h"
 
-#if defined(OSX) || defined(__ANDROID__)
-	#if defined(OSX)
+#if defined(WIN32) || defined(OSX) || defined(__ANDROID__)
+	#if defined(WIN32)
+		#include <windows.h>
+
+		static HMODULE s_openGLModule;
+
+		void open_libgl(void)
+		{
+			if (!s_openGLModule)
+				s_openGLModule = LoadLibraryA("opengl32.dll");
+		}
+
+		void close_libgl(void)
+		{
+			if (s_openGLModule)
+			{
+				FreeLibrary(s_openGLModule);
+				s_openGLModule = NULL;
+			}
+		}
+
+		void* getProcAddress(const char *proc)
+		{
+			PROC result = wglGetProcAddress(proc);
+			if (result == NULL || result == (PROC)1 || result == (PROC)2 ||
+				result == (PROC)3 || result == (PROC)-1)
+			{
+				if (!s_openGLModule) open_libgl();
+				result = s_openGLModule ? GetProcAddress(s_openGLModule, proc) : NULL;
+			}
+			return (void*)result;
+		}
+	#elif defined(OSX)
 		#include <Carbon/Carbon.h>
 
 		CFBundleRef __bundle;
@@ -39,7 +70,7 @@
 	#else
 		void open_libgl(){}
 		void close_libgl(){}
-	#endif // OSX
+	#endif
 
 
 // GL 1.X
@@ -339,7 +370,7 @@ PFNGLSAMPLEMASKIPROC glSampleMaski;
 
 void initGL10Funcs()
 {
-#if defined(OSX) || defined(__ANDROID__)
+#if defined(WIN32) || defined(OSX) || defined(__ANDROID__)
 	glGetString = (PFNGLGETSTRINGPROC)getProcAddress("glGetString");
 	glGetIntegerv = (PFNGLGETINTEGERVPROC)getProcAddress("glGetIntegerv");
 	glFlush = (PFNGLFLUSHPROC)getProcAddress("glFlush");

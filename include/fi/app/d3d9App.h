@@ -7,7 +7,7 @@
 */
 
 #include <d3d9.h>
-#include "Win32App.h"
+#include "win32App.h"
 
 class D3D9App : public Win32App
 {

@@ -6,7 +6,11 @@ INCDIR=-I$(TOPDIR)/include
 #LIBDIR=-L$(TOPDIR)/lib
 
 LIBS_LINUX= -lfiApp -ldl -lGL -lX11
-LIBS_W32= -ld3d9 -static -lfigfx -lglew32s -lopengl32 -lgdi32
+ifeq ($(TOOLCHAIN),llvm-msvc)
+LIBS_W32= $(TOPDIR)/lib/libfiApp.a -lopengl32 -lgdi32 -luser32
+else
+LIBS_W32= -lfiApp -lopengl32 -lgdi32 -luser32
+endif
 LIBS_OSX= -lfiApp -framework Cocoa -framework OpenGL
 LIBS_WEB= -lfiApp
 

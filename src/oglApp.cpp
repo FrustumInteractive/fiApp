@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 
@@ -23,12 +24,10 @@ std::string boolStr(bool b)
 
 void printList(const std::string &str)
 {
-	char* s = strtok((char*)str.c_str(), " \n\t");
-	while(s)
-	{
-		FI::LOG(s);
-		s = strtok(NULL, " \n\t");
-	}
+	std::istringstream tokens(str);
+	std::string token;
+	while (tokens >> token)
+		FI::LOG(token);
 }
 
 static bool isExtensionSupported(const char *extList, const char *extension)
@@ -312,26 +311,24 @@ void OGLApp::gfxAPIInit()
 			initGL32Funcs();
 		}
 
-		int numExt = 0, count = 0;
+		int numExt = 0;
 
 		glGetIntegerv(GL_NUM_EXTENSIONS, &numExt);
-		std::vector<std::string> exts;
-		exts.resize(numExt);
 
 		// load new glGetstringi proc
 		glGetStringi = (PFNGLGETSTRINGIPROC)getProcAddress("glGetStringi");
 
 		FI::LOG(" ", numExt, "GL extensions found.");
 
-		for(auto i : exts)
+		for(int count = 0; count < numExt; ++count)
 		{
-			i = std::string((const char*)glGetStringi(GL_EXTENSIONS, count));
+			const std::string extension((const char*)glGetStringi(GL_EXTENSIONS, count));
 
-			m_es3Compatibility = i == "GL_ARB_ES3_compatibility";
-			m_es2Compatibility = i == "GL_ARB_ES2_compatibility";
-			vboSupport = i == "GL_ARB_vertex_buffer_object";
-			vaoSupport = i == "GL_ARB_vertex_array_object";
-			fboSupport = i == "GL_ARB_framebuffer_object";
+			m_es3Compatibility |= extension == "GL_ARB_ES3_compatibility";
+			m_es2Compatibility |= extension == "GL_ARB_ES2_compatibility";
+			vboSupport |= extension == "GL_ARB_vertex_buffer_object";
+			vaoSupport |= extension == "GL_ARB_vertex_array_object";
+			fboSupport |= extension == "GL_ARB_framebuffer_object";
 		}
 	}
 	else
@@ -353,17 +350,15 @@ void OGLApp::gfxAPIInit()
 		{
 			// go through all extensions and look for important onces
 			size_t numExts = 0;
-			char* s = strtok((char*)exts, " \n\t");
-			while(s)
+			std::istringstream extensions(reinterpret_cast<const char *>(exts));
+			std::string extension;
+			while (extensions >> extension)
 			{
-				//FI::LOG(s);
-				if(strstr((const char*)s, "GL_ARB_vertex_array_object")) vaoSupport = true;
-				if(strstr((const char*)s, "GL_ARB_vertex_buffer_object")) vboSupport = true;
-				if(strstr((const char*)s, "GL_ARB_framebuffer_object")) fboSupport = true;
-				if(strstr((const char*)s, "GL_ARB_ES2_compatibility")) m_es2Compatibility = true;
-				if(strstr((const char*)s, "GL_ARB_ES3_compatibility")) m_es3Compatibility = true;
-
-				s = strtok(NULL, " \n\t");
+				vaoSupport |= extension == "GL_ARB_vertex_array_object";
+				vboSupport |= extension == "GL_ARB_vertex_buffer_object";
+				fboSupport |= extension == "GL_ARB_framebuffer_object";
+				m_es2Compatibility |= extension == "GL_ARB_ES2_compatibility";
+				m_es3Compatibility |= extension == "GL_ARB_ES3_compatibility";
 				numExts++;
 			}
 			FI::LOG(" found", numExts, "GL extensions.");
