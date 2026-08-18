@@ -35,6 +35,7 @@ public:
 	void resize(int x, int y) override {}
 
 	void warpMouseCursorPosition(unsigned int x, unsigned int y) override;
+	void warpMouseCursorPositionInWindow(float x, float y) override;
 
 
 protected:

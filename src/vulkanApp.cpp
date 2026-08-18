@@ -181,6 +181,8 @@ void VulkanApp::createInstance()
 
 #if defined(WIN32)
 	instExt.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined(LINUX)
+	instExt.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #elif defined(OSX)
 	// On macOS/MoltenVK you typically need metal surface + portability enumeration.
 	instExt.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
@@ -214,6 +216,15 @@ void VulkanApp::createSurface()
 	wsci.hwnd = m_hWnd;
 	vkCheck(vkCreateWin32SurfaceKHR(m_instance, &wsci, nullptr, &m_surface),
 			"vkCreateWin32SurfaceKHR failed");
+#elif defined(LINUX)
+	if (!m_display || !m_window)
+		throw std::runtime_error("Xlib Vulkan surface requires a valid Display and Window.");
+
+	VkXlibSurfaceCreateInfoKHR xsci{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR};
+	xsci.dpy = m_display;
+	xsci.window = m_window;
+	vkCheck(vkCreateXlibSurfaceKHR(m_instance, &xsci, nullptr, &m_surface),
+			"vkCreateXlibSurfaceKHR failed");
 #elif defined(OSX)
 	#if !defined(FI_GFX_METAL)
 		throw std::runtime_error("OSX Vulkan surface requires FI_GFX_METAL (CAMetalLayer).");
@@ -228,7 +239,7 @@ void VulkanApp::createSurface()
 				"vkCreateMetalSurfaceEXT failed");
 	#endif
 #else
-	// TODO: X11/Android surface creation based on native window handles.
+	// TODO: Android surface creation based on its native window handle.
 	throw std::runtime_error("createSurface not implemented for this platform yet.");
 #endif
 }
@@ -418,6 +429,18 @@ void VulkanApp::createSwapchain()
 			w = m_width;
 			h = m_height;
 		}
+#elif defined(LINUX)
+		XWindowAttributes attributes{};
+		if (m_display && m_window && XGetWindowAttributes(m_display, m_window, &attributes))
+		{
+			w = attributes.width;
+			h = attributes.height;
+		}
+		else
+		{
+			w = m_width;
+			h = m_height;
+		}
 #else
 		// TODO: other platforms: your app framework should return drawable size
 #endif
@@ -427,6 +450,11 @@ void VulkanApp::createSwapchain()
 		extent.height = (uint32_t)std::clamp(h, (int)caps.minImageExtent.height, (int)caps.maxImageExtent.height);
 	}
 	m_swapchainExtent = extent;
+	// The surface-reported extent is the authoritative drawable size. This may
+	// differ from the requested logical window size on high-DPI desktops.
+	m_width = (int)extent.width;
+	m_height = (int)extent.height;
+	FI::LOG("Vulkan swapchain extent:", m_width, "x", m_height);
 
 	uint32_t pmCount = 0;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(m_phys, m_surface, &pmCount, nullptr);

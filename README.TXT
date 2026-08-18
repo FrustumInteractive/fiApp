@@ -80,6 +80,54 @@ Vulkan backend automatically:
   make
   ./vulkanAppTest.exe
 
+Ubuntu Vulkan support
+---------------------
+
+Ubuntu's packages provide the Vulkan headers and loader, diagnostic tools, and
+the shader compiler used by the fiApp and fiGfx samples. Install them with:
+
+  sudo apt update
+  sudo apt install libvulkan-dev vulkan-tools glslang-tools xxd
+
+The Vulkan runtime also needs a GPU-specific driver. Ubuntu's Intel and AMD
+Mesa drivers can be installed with:
+
+  sudo apt install mesa-vulkan-drivers
+
+For NVIDIA hardware, use Ubuntu's recommended proprietary NVIDIA driver instead.
+Verify that the loader can see the GPU before building:
+
+  vulkaninfo --summary
+
+Ubuntu's system packages install headers and libraries in the standard system
+paths, so VULKAN_SDK does not need to be set. Build and run the standalone
+triangle sample with:
+
+  cd projects/fiApp/test/vulkan
+  make deepclean
+  make
+  ./vulkanAppTest
+
+The fiGfx scene test can be built and run with the Vulkan backend from
+projects/fiGfx/test/scene:
+
+  ./build_run.sh vulkan
+
+X11 high-DPI support
+--------------------
+
+On Linux, fiApp reads the X11 Xft.dpi resource; 96 DPI is a 1x content scale.
+Following the standard X11 model, window and drawable dimensions remain the
+exact pixel dimensions requested by the application. The content scale is for
+sizing UI rather than multiplying the Vulkan swapchain or OpenGL framebuffer.
+
+If the desktop does not publish Xft.dpi, or to test a specific fractional
+scale, set FI_X11_SCALE before launching the application. For example:
+
+  FI_X11_SCALE=2 ./gfxSceneTest
+
+An unset override and missing Xft.dpi retain the existing 1x behavior.
+
 The same Makefile is used on macOS. It adds FI_GFX_METAL for fiApp's
 CAMetalLayer window, links MoltenVK through the SDK's libvulkan compatibility
 library, embeds the SDK library path in the application, and links Cocoa, Metal,

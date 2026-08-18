@@ -18,6 +18,10 @@
 #if defined(WIN32) && !defined(VK_USE_PLATFORM_WIN32_KHR)
 	#define VK_USE_PLATFORM_WIN32_KHR
 #endif
+#if defined(LINUX) && !defined(VK_USE_PLATFORM_XLIB_KHR)
+	#define VK_USE_PLATFORM_XLIB_KHR
+	#include <X11/Xlib.h>
+#endif
 #if (defined(OSX) || defined(__APPLE__)) && defined(FI_GFX_METAL) && !defined(VK_USE_PLATFORM_METAL_EXT)
 	#define VK_USE_PLATFORM_METAL_EXT
 #endif

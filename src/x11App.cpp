@@ -9,8 +9,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <cmath>
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
+#include <X11/Xutil.h>
 #include "fi/app/x11App.h"
 #include "fi/debug/trace.h"
 
@@ -22,11 +25,54 @@ typedef struct {
 	unsigned long   status;
 } Hints;
 
+static float x11ContentScale(Display *display)
+{
+	const char *overrideScale = getenv("FI_X11_SCALE");
+	if (overrideScale && *overrideScale)
+	{
+		char *end = nullptr;
+		const float scale = strtof(overrideScale, &end);
+		if (end != overrideScale && *end == '\0' && std::isfinite(scale) && scale > 0.0f)
+			return scale;
+		FI::LOG("Ignoring invalid FI_X11_SCALE:", overrideScale);
+	}
+
+	float resourceScale = 1.0f;
+	XrmInitialize();
+	const char *resourceString = XResourceManagerString(display);
+	if (resourceString)
+	{
+		XrmDatabase database = XrmGetStringDatabase(resourceString);
+		if (database)
+		{
+			char *type = nullptr;
+			XrmValue value{};
+			if (XrmGetResource(database, "Xft.dpi", "Xft.Dpi", &type, &value) && value.addr)
+			{
+				char *end = nullptr;
+				const float dpi = strtof(value.addr, &end);
+				if (end != value.addr && std::isfinite(dpi) && dpi > 0.0f)
+					resourceScale = dpi / 96.0f;
+			}
+			XrmDestroyDatabase(database);
+		}
+	}
+
+	return resourceScale;
+}
+
 X11App::X11App(const int argc, const char *argv[]) :
 	Application(argc,argv),
 	m_display(0),
+	m_rootWindow(0),
 	m_attributes(0),
-	m_visualInfo(0)
+	m_visualInfo(0),
+	m_colormap(0),
+	m_window(0),
+	m_glContext(0),
+	m_bestFbc(0),
+	m_glxMinor(0),
+	m_glxMajor(0)
 {
 }
 
@@ -61,12 +107,29 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 	m_display = XOpenDisplay(NULL);
 	if(m_display == NULL) {
 		FI::LOG("Cannot connect to X server");
-		exit(0);
+		 exit(0);
 	}
+
+	m_scaleFactor = x11ContentScale(m_display);
+	FI::LOG("X11 content scale:", m_scaleFactor);
 
 	m_rootWindow = DefaultRootWindow(m_display);
 	int screenID = DefaultScreen(m_display); //Get the default screen id
 
+#if defined(FI_GFX_VULKAN)
+	// Vulkan presents directly to an X11 window. Do not select the window's
+	// visual through GLX: GLX framebuffer configuration (including its sample
+	// count) is an OpenGL concern and is not used by a Vulkan swapchain.
+	XVisualInfo visualTemplate{};
+	visualTemplate.visualid = XVisualIDFromVisual(DefaultVisual(m_display, screenID));
+	int visualCount = 0;
+	m_visualInfo = XGetVisualInfo(m_display, VisualIDMask, &visualTemplate, &visualCount);
+	if (!m_visualInfo || visualCount < 1)
+	{
+		FI::LOG("Failed to retrieve the default X11 visual for Vulkan");
+		exit(1);
+	}
+#else
 	// FBConfigs were added in GLX version 1.3.
 	if (!glXQueryVersion(m_display, &m_glxMajor, &m_glxMinor) || ((m_glxMajor==1) && (m_glxMinor<2)) || (m_glxMajor<1))
 	{
@@ -130,9 +193,12 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		}
 		FI::LOG( "Found", fbcount, "matching FB configs." );	
 
-		// Pick the FB config/visual with the most samples per pixel
+		// Prefer 4x MSAA. If it is unavailable, choose the closest supported
+		// sample count, preferring the lower count when equally close.
 		FI::LOG("Getting XVisualInfos" );
-		int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+		int preferred_fbc = -1;
+		int preferred_samples = 0;
+		int preferred_distance = 999;
 
 		int i;
 		for (i=0; i<fbcount; ++i)
@@ -146,15 +212,20 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		
 					FI::LOG("Matching fbconfig:", i, "visual ID:", vi->visualid, "SAMPLE_BUFFERS:", samp_buf,"SAMPLES:", samples );
 
-					if ( best_fbc < 0 || (samp_buf && samples > best_num_samp) )
-						best_fbc = i, best_num_samp = samples;
-					if ( worst_fbc < 0 || !samp_buf || samples < worst_num_samp )
-						worst_fbc = i, worst_num_samp = samples;
+					const int effectiveSamples = samp_buf ? samples : 0;
+					const int distance = std::abs(effectiveSamples - 4);
+					if (preferred_fbc < 0 || distance < preferred_distance ||
+						(distance == preferred_distance && effectiveSamples < preferred_samples))
+					{
+						preferred_fbc = i;
+						preferred_samples = effectiveSamples;
+						preferred_distance = distance;
+					}
 				}
 				XFree( vi );
 		}
 
-		m_bestFbc = fbc[ best_fbc ];
+		m_bestFbc = fbc[ preferred_fbc ];
 
 		// Be sure to free the FBConfig list allocated by glXChooseFBConfig()
 		XFree( fbc );
@@ -162,6 +233,7 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 		// Get a visual
 		m_visualInfo = glXGetVisualFromFBConfig( m_display, m_bestFbc );
 	}
+#endif
 
 	FI::LOG("Chosen visual ID:", m_visualInfo->visualid );
 
@@ -171,7 +243,7 @@ void X11App::createWindowEx(const char *title, int x, int y, int width, int heig
 	m_setWindowAttributes.border_pixel = 0;
 	m_setWindowAttributes.event_mask =
 		ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask |
-		PointerMotionMask | ButtonMotionMask | Button1MotionMask;
+		PointerMotionMask | ButtonMotionMask | Button1MotionMask | StructureNotifyMask;
 
 	// FULLSCREEN
 	if(m_bFullscreen)
@@ -256,6 +328,16 @@ void X11App::mainloop()
 
 	while (!m_bQuit)
 	{
+		while (XCheckTypedWindowEvent(m_display, m_window, ConfigureNotify, &m_xEvent))
+		{
+			const int width = m_xEvent.xconfigure.width;
+			const int height = m_xEvent.xconfigure.height;
+			if (width > 0 && height > 0 && (width != m_width || height != m_height))
+			{
+				resize(width, height);
+			}
+		}
+
 		if (XCheckWindowEvent(m_display, m_window, KeyPressMask | KeyReleaseMask, &m_xEvent))
 		{
 			XEvent nextEvent;
@@ -315,22 +397,23 @@ void X11App::mainloop()
 		if(XCheckWindowEvent(m_display, m_window, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask, &m_xEvent))
 		{
 			FI::Event e;
+			const float inputScale = m_scaleFactor > 0.0f ? m_scaleFactor : 1.0f;
 
 			switch(m_xEvent.type)
 			{
 				case ButtonPress:
 					hasLastMousePosition = true;
-					lastMouseX = (float)m_xEvent.xbutton.x;
-					lastMouseY = (float)m_xEvent.xbutton.y;
+					lastMouseX = (float)m_xEvent.xbutton.x / inputScale;
+					lastMouseY = (float)m_xEvent.xbutton.y / inputScale;
 					switch(m_xEvent.xbutton.button)
 					{
 						case Button1:
 							e.setType(FI::EVENT_MOUSE_LEFT_CLICK);
-							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
+							e.setData(lastMouseX, lastMouseY);
 							break;
 						case Button3:
 							e.setType(FI::EVENT_MOUSE_RIGHT_CLICK);
-							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
+							e.setData(lastMouseX, lastMouseY);
 							break;
 						default:
 							break;
@@ -339,17 +422,17 @@ void X11App::mainloop()
 
 				case ButtonRelease:
 					hasLastMousePosition = true;
-					lastMouseX = (float)m_xEvent.xbutton.x;
-					lastMouseY = (float)m_xEvent.xbutton.y;
+					lastMouseX = (float)m_xEvent.xbutton.x / inputScale;
+					lastMouseY = (float)m_xEvent.xbutton.y / inputScale;
 					switch(m_xEvent.xbutton.button)
 					{
 						case Button1:
 							e.setType(FI::EVENT_MOUSE_LEFT_RELEASE);
-							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
+							e.setData(lastMouseX, lastMouseY);
 							break;
 						case Button3:
 							e.setType(FI::EVENT_MOUSE_RIGHT_RELEASE);
-							e.setData((float)m_xEvent.xbutton.x, (float)m_xEvent.xbutton.y);
+							e.setData(lastMouseX, lastMouseY);
 							break;
 						default:
 							break;
@@ -358,8 +441,8 @@ void X11App::mainloop()
 
 				case MotionNotify:
 				{
-					const float mouseX = (float)m_xEvent.xmotion.x;
-					const float mouseY = (float)m_xEvent.xmotion.y;
+					const float mouseX = (float)m_xEvent.xmotion.x / inputScale;
+					const float mouseY = (float)m_xEvent.xmotion.y / inputScale;
 					const float mouseDx = hasLastMousePosition ? mouseX - lastMouseX : 0.0f;
 					const float mouseDy = hasLastMousePosition ? mouseY - lastMouseY : 0.0f;
 					hasLastMousePosition = true;
@@ -403,7 +486,11 @@ void X11App::mainloop()
 		{
 			XSync(m_display, true); //discard event queue (needed to make mouse response immediate)
 			gfxAPIDraw();
+			// Vulkan presents its swapchain from gfxAPIDraw(). All other native
+			// Linux builds retain the original GLX presentation path.
+#if !defined(FI_GFX_VULKAN)
 			glXSwapBuffers(m_display, m_window);
+#endif
 			m_usecondsSinceLastDisplay = 0;
 		}
 		usleep(m_timeToNextInputUpdate*1000.0f);
@@ -413,6 +500,18 @@ void X11App::mainloop()
 void X11App::warpMouseCursorPosition(unsigned int x, unsigned int y)
 {
 	XWarpPointer(m_display, None, m_window, 0, 0, 0, 0, x, y);
+}
+
+void X11App::warpMouseCursorPositionInWindow(float x, float y)
+{
+	if (x < 0.0f) x = 0.0f;
+	if (x > 1.0f) x = 1.0f;
+	if (y < 0.0f) y = 0.0f;
+	if (y > 1.0f) y = 1.0f;
+
+	const unsigned int localX = (unsigned int)std::lround(x * (float)m_width);
+	const unsigned int localY = (unsigned int)std::lround((1.0f - y) * (float)m_height);
+	XWarpPointer(m_display, None, m_window, 0, 0, 0, 0, localX, localY);
 }
 
 void X11App::swapBuffers()

@@ -65,12 +65,12 @@ include $(TOPDIR)/templates/Makefile_include_application
 $(OBJDIR)/app.o: $(SHADER_HEADERS)
 
 $(VERT_SPV): src/triangle.vert
-	@test -x "$(GLSLANG_VALIDATOR)" || (echo "Missing glslangValidator at $(GLSLANG_VALIDATOR); install the LunarG Vulkan SDK and reopen the shell."; exit 1)
+	@command -v "$(GLSLANG_VALIDATOR)" >/dev/null 2>&1 || (echo "Missing glslangValidator at $(GLSLANG_VALIDATOR); install glslang-tools or the LunarG Vulkan SDK."; exit 1)
 	@mkdir -p $(SHADER_DIR)
 	"$(GLSLANG_VALIDATOR)" -V --target-env vulkan1.0 -S vert -o $@ $<
 
 $(FRAG_SPV): src/triangle.frag
-	@test -x "$(GLSLANG_VALIDATOR)" || (echo "Missing glslangValidator at $(GLSLANG_VALIDATOR); install the LunarG Vulkan SDK and reopen the shell."; exit 1)
+	@command -v "$(GLSLANG_VALIDATOR)" >/dev/null 2>&1 || (echo "Missing glslangValidator at $(GLSLANG_VALIDATOR); install glslang-tools or the LunarG Vulkan SDK."; exit 1)
 	@mkdir -p $(SHADER_DIR)
 	"$(GLSLANG_VALIDATOR)" -V --target-env vulkan1.0 -S frag -o $@ $<
 
