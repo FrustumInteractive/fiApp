@@ -6,10 +6,6 @@
 *		Copyright Frustum Interactive Inc. - All rights reserved.
 */
 
-#define NS_PRIVATE_IMPLEMENTATION
-//#define CA_PRIVATE_IMPLEMENTATION
-#define MTL_PRIVATE_IMPLEMENTATION
-
 #include "fi/app/metalApp.h"
 #include "fi/debug/trace.h"
 #include <stdio.h>
@@ -50,4 +46,3 @@ void MetalApp::gfxAPIDeinit()
 {
 	deinitScene();
 }
-

@@ -30,6 +30,7 @@ extern "C" int CWPassedTimeC(void);
 extern "C" void CWMouseC(int *lb,int *mb,int *rb,int *mx,int *my);
 extern "C" int CWGetMouseEventC(int *lb,int *mb,int *rb,int *mx,int *my,float *dx,float *dy);
 extern "C" void CWSwapBufferC(void);
+extern "C" void CWWaitForDisplayRefreshC(void);
 extern "C" eKeyCode CWInkeyC(void);
 extern "C" char CWInkeyCharC(void);
 extern "C" int CWKeyStateC(eKeyCode kc);
@@ -106,6 +107,11 @@ int CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my,float *dx,float *dy)
 void CWSwapBuffers(void)
 {
 	CWSwapBufferC();
+}
+
+void CWWaitForDisplayRefresh(void)
+{
+	CWWaitForDisplayRefreshC();
 }
 
 eKeyCode CWInkey(void)

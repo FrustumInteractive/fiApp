@@ -8,11 +8,15 @@
 
 #import <Cocoa/Cocoa.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <CoreVideo/CoreVideo.h>
 #import <QuartzCore/CAMetalLayer.h>
 #include <dlfcn.h>
+#include <pthread.h>
 
 #include "fi/app/cocoaWrapper.h"
 #include "fi/app/cocoaKeyCodes.h"
+
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 static int mouseLb=0, mouseMb=0, mouseRb=0;
 
@@ -23,6 +27,65 @@ static bool gGLFinishResolved = false;
 static bool gGLFinishAvailable = false;
 typedef void (*CWGLFinishProc)(void);
 static CWGLFinishProc gGLFinish = 0;
+
+#if !FI_GFX_METAL
+static CVDisplayLinkRef gDisplayLink = NULL;
+static pthread_mutex_t gDisplayLinkMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t gDisplayLinkCondition = PTHREAD_COND_INITIALIZER;
+static uint64_t gDisplayLinkSequence = 0;
+static uint64_t gConsumedDisplayLinkSequence = 0;
+
+static CVReturn CWDisplayLinkCallback(
+	CVDisplayLinkRef displayLink,
+	const CVTimeStamp *now,
+	const CVTimeStamp *outputTime,
+	CVOptionFlags flagsIn,
+	CVOptionFlags *flagsOut,
+	void *context)
+{
+	(void)displayLink;
+	(void)now;
+	(void)outputTime;
+	(void)flagsIn;
+	(void)flagsOut;
+	(void)context;
+	pthread_mutex_lock(&gDisplayLinkMutex);
+	++gDisplayLinkSequence;
+	pthread_cond_signal(&gDisplayLinkCondition);
+	pthread_mutex_unlock(&gDisplayLinkMutex);
+	return kCVReturnSuccess;
+}
+
+static void CWConfigureDisplayLink(int enabled)
+{
+	if (!enabled)
+	{
+		if (gDisplayLink && CVDisplayLinkIsRunning(gDisplayLink))
+		{
+			CVDisplayLinkStop(gDisplayLink);
+		}
+		return;
+	}
+
+	if (!gDisplayLink)
+	{
+		if (CVDisplayLinkCreateWithActiveCGDisplays(&gDisplayLink) != kCVReturnSuccess)
+		{
+			gDisplayLink = NULL;
+			return;
+		}
+		CVDisplayLinkSetOutputCallback(gDisplayLink, CWDisplayLinkCallback, NULL);
+	}
+
+	if (!CVDisplayLinkIsRunning(gDisplayLink))
+	{
+		pthread_mutex_lock(&gDisplayLinkMutex);
+		gConsumedDisplayLinkSequence = gDisplayLinkSequence;
+		pthread_mutex_unlock(&gDisplayLinkMutex);
+		CVDisplayLinkStart(gDisplayLink);
+	}
+}
+#endif
 
 static void CWResolveGLFinishIfNeeded(void)
 {
@@ -989,6 +1052,24 @@ void CWSwapBufferC(void)
 #endif
 }
 
+void CWWaitForDisplayRefreshC(void)
+{
+#if !FI_GFX_METAL
+	if (!gDisplayLink || !CVDisplayLinkIsRunning(gDisplayLink))
+	{
+		return;
+	}
+
+	pthread_mutex_lock(&gDisplayLinkMutex);
+	while (gDisplayLinkSequence == gConsumedDisplayLinkSequence)
+	{
+		pthread_cond_wait(&gDisplayLinkCondition, &gDisplayLinkMutex);
+	}
+	gConsumedDisplayLinkSequence = gDisplayLinkSequence;
+	pthread_mutex_unlock(&gDisplayLinkMutex);
+#endif
+}
+
 void CWSetVSyncC(int enabled)
 {
 #if FI_GFX_METAL
@@ -997,6 +1078,7 @@ void CWSetVSyncC(int enabled)
 	[[cwView openGLContext] makeCurrentContext];
 	GLint swapInterval = enabled ? 1 : 0;
 	[[cwView openGLContext] setValues:&swapInterval forParameter:NSOpenGLContextParameterSwapInterval];
+	CWConfigureDisplayLink(enabled);
 
 	GLint readback = -1;
 	[[cwView openGLContext] getValues:&readback forParameter:NSOpenGLContextParameterSwapInterval];

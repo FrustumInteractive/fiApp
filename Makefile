@@ -25,6 +25,20 @@ CXX_FILES += \
 
 endif
 
+ifneq ($(findstring FI_GFX_METAL,$(EXTRACXXFLAGS)),)
+INCDIR += -I../fiGfx/external/metal-cpp
+ifeq ($(findstring FI_GFX_VULKAN,$(EXTRACXXFLAGS)),)
+CXX_FILES += \
+	metalApp.cpp
+endif
+endif
+
+ifneq ($(findstring FI_GFX_VULKAN,$(EXTRACXXFLAGS)),)
+OUTDIR=build/vulkan
+else ifneq ($(findstring FI_GFX_METAL,$(EXTRACXXFLAGS)),)
+OUTDIR=build/metal
+endif
+
 C_FILES_LINUX=\
 	gl/glProcs.c
 CXX_FILES_LINUX=\

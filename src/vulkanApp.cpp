@@ -434,7 +434,7 @@ void VulkanApp::createSwapchain()
 	vkGetPhysicalDeviceSurfacePresentModesKHR(m_phys, m_surface, &pmCount, pms.data());
 
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-	if (!m_bVsyncEnabled)
+	if (m_bVsyncEnabled)
 	{
 		for (auto m : pms)
 		{
@@ -443,12 +443,25 @@ void VulkanApp::createSwapchain()
 				presentMode = m;
 				break;
 			}
+		}
+	}
+	else
+	{
+		for (auto m : pms)
+		{
 			if (m == VK_PRESENT_MODE_IMMEDIATE_KHR)
+			{
+				presentMode = m;
+				break;
+			}
+			if (m == VK_PRESENT_MODE_MAILBOX_KHR)
 			{
 				presentMode = m;
 			}
 		}
 	}
+	FI::LOG("Vulkan present mode:", presentMode == VK_PRESENT_MODE_MAILBOX_KHR ? "mailbox" :
+		presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR ? "immediate" : "fifo");
 
 	uint32_t imageCount = caps.minImageCount + 1;
 	if (caps.maxImageCount > 0 && imageCount > caps.maxImageCount)

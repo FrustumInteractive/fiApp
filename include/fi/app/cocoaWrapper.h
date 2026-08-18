@@ -21,6 +21,7 @@ int      CWPassedTime(void);
 void     CWGetMouseState(int *lb,int *mb,int *rb,int *mx,int *my);
 int      CWGetMouseEvent(int *lb,int *mb,int *rb,int *mx,int *my,float *dx = nullptr,float *dy = nullptr);
 void     CWSwapBuffers(void);
+void     CWWaitForDisplayRefresh(void);
 eKeyCode CWInkey(void);
 char     CWInkeyChar(void);
 int      CWGetKeyState(eKeyCode);

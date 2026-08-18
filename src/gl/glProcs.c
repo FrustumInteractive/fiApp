@@ -128,6 +128,7 @@ PFNGLENDQUERYPROC glEndQuery;
 PFNGLGETQUERYIVPROC glGetQueryiv;
 PFNGLGETQUERYOBJECTIVPROC glGetQueryObjectiv;
 PFNGLGETQUERYOBJECTUIVPROC glGetQueryObjectuiv;
+PFNGLGETQUERYOBJECTUI64VPROC glGetQueryObjectui64v;
 PFNGLBINDBUFFERPROC glBindBuffer;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 PFNGLGENBUFFERSPROC glGenBuffers;
@@ -418,6 +419,7 @@ void initGL15Funcs()
 	glGetQueryiv = (PFNGLGETQUERYIVPROC)getProcAddress("glGetQueryiv");
 	glGetQueryObjectiv = (PFNGLGETQUERYOBJECTIVPROC)getProcAddress("glGetQueryObjectiv");
 	glGetQueryObjectuiv = (PFNGLGETQUERYOBJECTUIVPROC)getProcAddress("glGetQueryObjectuiv");
+	glGetQueryObjectui64v = (PFNGLGETQUERYOBJECTUI64VPROC)getProcAddress("glGetQueryObjectui64v");
 	glBindBuffer = (PFNGLBINDBUFFERPROC)getProcAddress("glBindBuffer");
 	glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)getProcAddress("glDeleteBuffers");
 	glGenBuffers = (PFNGLGENBUFFERSPROC)getProcAddress("glGenBuffers");

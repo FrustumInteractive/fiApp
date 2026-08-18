@@ -285,6 +285,10 @@ void OSXApp::mainloop()
 			{
 				sDrawInProgress = true;
 #if !FI_GFX_METAL
+			if (m_bVsyncEnabled)
+			{
+				CWWaitForDisplayRefresh();
+			}
 			auto frameBegin = Clock::now();
 #endif
 			gfxAPIDraw();		// our draw call
@@ -312,7 +316,7 @@ void OSXApp::mainloop()
 				double swapFps = (double)swapFrames / swapWindowSeconds;
 				double avgSwapBlockMs = (swapBlockSeconds / (double)swapFrames) * 1000.0;
 				FI::LOG(
-					"swap fps avg (",
+					"frame loop fps (",
 					swapWindowSeconds,
 					"s):",
 					swapFps,

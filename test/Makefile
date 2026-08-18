@@ -11,7 +11,7 @@ LIBS_W32= $(TOPDIR)/lib/libfiApp.a -lopengl32 -lgdi32 -luser32
 else
 LIBS_W32= -lfiApp -lopengl32 -lgdi32 -luser32
 endif
-LIBS_OSX= -lfiApp -framework Cocoa -framework OpenGL
+LIBS_OSX= -lfiApp -framework Cocoa -framework OpenGL -framework CoreVideo
 LIBS_WEB= -lfiApp
 
 ifdef WEB
