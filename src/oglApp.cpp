@@ -298,7 +298,7 @@ void OGLApp::gfxAPIInit()
 		{
 			switch (m_minorVersion)
 			{
-				case 3:
+				case 3: initGL33Funcs();
 				case 2: initGL32Funcs();
 				case 1: initGL31Funcs();
 				case 0: initGL30Funcs();
@@ -309,6 +309,7 @@ void OGLApp::gfxAPIInit()
 			initGL30Funcs();
 			initGL31Funcs();
 			initGL32Funcs();
+			initGL33Funcs();
 		}
 
 		int numExt = 0;
