@@ -335,6 +335,9 @@ PFNGLTEXIMAGE3DMULTISAMPLEPROC glTexImage3DMultisample;
 PFNGLGETMULTISAMPLEFVPROC glGetMultisamplefv;
 PFNGLSAMPLEMASKIPROC glSampleMaski;
 
+// GL 3.3
+PFNGLGETQUERYOBJECTUI64VPROC glGetQueryObjectui64v;
+
 
 void initGL10Funcs()
 {
@@ -601,4 +604,9 @@ void initGL30Funcs()
 	glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)getProcAddress("glDeleteVertexArrays");
 	glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)getProcAddress("glGenVertexArrays");
 	glIsVertexArray = (PFNGLISVERTEXARRAYPROC)getProcAddress("glIsVertexArray");
+}
+
+void initGL33Funcs()
+{
+	glGetQueryObjectui64v = (PFNGLGETQUERYOBJECTUI64VPROC)getProcAddress("glGetQueryObjectui64v");
 }
